@@ -49,16 +49,19 @@ const ChatBot = ({ user }: ChatBotProps) => {
         .single();
 
       if (sessionError) throw sessionError;
-      setSessionId(session.id);
+      
+      if (session) {
+        setSessionId(session.id);
 
-      // Add welcome message
-      const welcomeMessage = {
-        id: "welcome",
-        message: "Hello! I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen and support you. 🌟",
-        is_bot: true,
-        created_at: new Date().toISOString(),
-      };
-      setMessages([welcomeMessage]);
+        // Add welcome message
+        const welcomeMessage = {
+          id: "welcome",
+          message: "Hello! I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen and support you. 🌟",
+          is_bot: true,
+          created_at: new Date().toISOString(),
+        };
+        setMessages([welcomeMessage]);
+      }
     } catch (error: any) {
       toast({
         title: "Error",

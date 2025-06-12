@@ -193,12 +193,15 @@ const BadgeSystem = ({ user }: BadgeSystemProps) => {
       if (moodEntries.data && moodEntries.data.length >= 7) {
         const recentMoods = moodEntries.data
           .slice(-7)
-          .map(entry => entry.mood_level);
+          .map(entry => entry.mood_level)
+          .filter(level => level !== null) as number[];
         
-        const averageMood = recentMoods.reduce((sum, mood) => sum + mood, 0) / recentMoods.length;
-        
-        if (averageMood >= 4) {
-          await awardBadge("positive_vibes", "Positive Vibes", "Maintained an average mood of 4+ for a week");
+        if (recentMoods.length >= 7) {
+          const averageMood = recentMoods.reduce((sum, mood) => sum + mood, 0) / recentMoods.length;
+          
+          if (averageMood >= 4) {
+            await awardBadge("positive_vibes", "Positive Vibes", "Maintained an average mood of 4+ for a week");
+          }
         }
       }
 
