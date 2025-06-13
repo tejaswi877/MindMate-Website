@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Bot, User as UserIcon, RefreshCw, History, Plus, MessageSquare } from "lucide-react";
+import { Send, Bot, User as UserIcon, RefreshCw, History, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ChatBotProps {
@@ -141,6 +142,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
 
       setSessionId(newSession.id);
       setMessages([]);
+      setShowPreviousSessions(false);
       loadPreviousSessions();
 
       // Add welcome message for new session
@@ -162,6 +164,42 @@ const ChatBot = ({ user }: ChatBotProps) => {
       toast({
         title: "Error",
         description: "Failed to create new chat session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const clearCurrentChat = async () => {
+    if (!sessionId) return;
+
+    try {
+      // Delete all messages in current session
+      const { error } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("session_id", sessionId);
+
+      if (error) throw error;
+
+      // Reset messages with welcome message
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
+      const welcomeMessage = {
+        id: "welcome-clear",
+        message: `Hello ${username}! 👋 Chat cleared! I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+
+      toast({
+        title: "Chat Cleared",
+        description: "All messages have been removed from this session",
+      });
+    } catch (error: any) {
+      console.error("Error clearing chat:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear chat",
         variant: "destructive",
       });
     }
@@ -370,15 +408,6 @@ const ChatBot = ({ user }: ChatBotProps) => {
     }
   };
 
-  const handleRefresh = () => {
-    setMessages([]);
-    initializeChat();
-    toast({
-      title: "Chat Refreshed",
-      description: "Starting a fresh conversation",
-    });
-  };
-
   const getUserDisplayName = () => {
     return user.user_metadata?.username || user.email?.split('@')[0] || 'You';
   };
@@ -406,6 +435,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
               size="sm" 
               onClick={() => setShowPreviousSessions(!showPreviousSessions)}
               className="hover:bg-purple-50"
+              title="Previous Chat"
             >
               <History className="h-4 w-4" />
             </Button>
@@ -414,14 +444,25 @@ const ChatBot = ({ user }: ChatBotProps) => {
               size="sm" 
               onClick={createNewChatSession}
               className="hover:bg-purple-50"
+              title="New Chat"
             >
               <Plus className="h-4 w-4" />
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
+              onClick={clearCurrentChat}
+              className="hover:bg-red-50 hover:border-red-200"
+              title="Clear Chat"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
               onClick={initializeChat}
               className="hover:bg-purple-50"
+              title="Refresh"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
