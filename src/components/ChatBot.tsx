@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Bot, User as UserIcon, RefreshCw } from "lucide-react";
+import { Send, Bot, User as UserIcon, RefreshCw, History, Plus, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ChatBotProps {
@@ -21,11 +20,19 @@ interface Message {
   sentiment_score?: number;
 }
 
+interface ChatSession {
+  id: string;
+  session_name: string;
+  created_at: string;
+}
+
 const ChatBot = ({ user }: ChatBotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [previousSessions, setPreviousSessions] = useState<ChatSession[]>([]);
+  const [showPreviousSessions, setShowPreviousSessions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -38,7 +45,23 @@ const ChatBot = ({ user }: ChatBotProps) => {
 
   useEffect(() => {
     initializeChat();
+    loadPreviousSessions();
   }, []);
+
+  const loadPreviousSessions = async () => {
+    try {
+      const { data: sessions, error } = await supabase
+        .from("chat_sessions")
+        .select("id, session_name, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPreviousSessions(sessions || []);
+    } catch (error: any) {
+      console.error("Error loading previous sessions:", error);
+    }
+  };
 
   const initializeChat = async () => {
     try {
@@ -97,6 +120,78 @@ const ChatBot = ({ user }: ChatBotProps) => {
       toast({
         title: "Error",
         description: "Failed to initialize chat",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createNewChatSession = async () => {
+    try {
+      const sessionName = `Chat Session ${new Date().toLocaleDateString()}`;
+      const { data: newSession, error } = await supabase
+        .from("chat_sessions")
+        .insert([{ 
+          user_id: user.id, 
+          session_name: sessionName 
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSessionId(newSession.id);
+      setMessages([]);
+      loadPreviousSessions();
+
+      // Add welcome message for new session
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
+      const welcomeMessage = {
+        id: "welcome-new",
+        message: `Hello ${username}! 👋 Welcome to a new chat session. I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+
+      toast({
+        title: "New Chat Created",
+        description: "Started a fresh conversation with MindMate",
+      });
+    } catch (error: any) {
+      console.error("Error creating new session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create new chat session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadChatSession = async (session: ChatSession) => {
+    try {
+      setSessionId(session.id);
+
+      // Load messages for selected session
+      const { data: sessionMessages, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("session_id", session.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setMessages(sessionMessages || []);
+      setShowPreviousSessions(false);
+
+      toast({
+        title: "Chat Loaded",
+        description: `Loaded chat: ${session.session_name}`,
+      });
+    } catch (error: any) {
+      console.error("Error loading chat session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat session",
         variant: "destructive",
       });
     }
@@ -305,18 +400,64 @@ const ChatBot = ({ user }: ChatBotProps) => {
               </p>
             </div>
           </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            className="hover:bg-purple-50"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowPreviousSessions(!showPreviousSessions)}
+              className="hover:bg-purple-50"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={createNewChatSession}
+              className="hover:bg-purple-50"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={initializeChat}
+              className="hover:bg-purple-50"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0">
+        {/* Previous Sessions Panel */}
+        {showPreviousSessions && (
+          <div className="border-b border-purple-100 bg-purple-25 p-4 max-h-40 overflow-y-auto">
+            <h4 className="text-sm font-medium text-purple-800 mb-2 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Previous Chat Sessions
+            </h4>
+            <div className="space-y-2">
+              {previousSessions.length > 0 ? (
+                previousSessions.map((session) => (
+                  <button
+                    key={session.id}
+                    onClick={() => loadChatSession(session)}
+                    className="w-full text-left p-2 text-xs bg-white rounded-lg hover:bg-purple-50 border border-purple-100"
+                  >
+                    <div className="font-medium text-purple-700">{session.session_name}</div>
+                    <div className="text-gray-500">
+                      {new Date(session.created_at).toLocaleDateString()}
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500">No previous sessions found</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto space-y-6 p-6 bg-gradient-to-b from-purple-25 to-blue-25">
           {messages.map((message) => (
