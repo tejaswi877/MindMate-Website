@@ -21,13 +21,22 @@ const Index = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
         
         if (event === 'SIGNED_IN') {
+          const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
-            title: "Welcome to MindMate! 🌟",
-            description: "Your mental wellness journey starts here.",
+            title: `Welcome ${username}! 🎉`,
+            description: "Successfully signed in to MindMate. Your mental wellness journey continues!",
+          });
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          toast({
+            title: "See you soon! 👋",
+            description: "You've been signed out. Remember, we're here whenever you need support.",
           });
         }
       }
@@ -38,14 +47,18 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading MindMate...</h2>
+          <p className="text-gray-500">Preparing your mental wellness companion</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen">
       {user ? <Dashboard user={user} /> : <AuthPage />}
       <Toaster />
     </div>
