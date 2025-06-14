@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -20,7 +19,7 @@ const Index = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
