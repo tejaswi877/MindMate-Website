@@ -3,11 +3,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Heart, Brain, Shield, Eye, EyeOff } from "lucide-react";
+import { Bot } from "lucide-react";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -15,55 +13,107 @@ const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const clearErrors = () => {
+    setEmailError("");
+    setPasswordError("");
+    setUsernameError("");
+    setConfirmError("");
   };
 
-  const validatePassword = (password: string) => {
-    return password.length >= 6;
+  const validateEmail = (email: string) => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
+  };
+
+  const handleSignIn = async () => {
+    clearErrors();
+    let isValid = true;
+
+    if (!email || !validateEmail(email)) {
+      setEmailError("Please enter a valid email.");
+      isValid = false;
+    }
+
+    if (!password) {
+      setPasswordError("Password cannot be empty.");
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "Sign In Failed",
+            description: "Invalid email or password. Please check your credentials and try again.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      if (data.user) {
+        const username = data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'there';
+        toast({
+          title: `Welcome back, ${username}! 🌟`,
+          description: "Successfully signed in. Ready to continue your wellness journey?",
+        });
+      }
+    } catch (error: any) {
+      console.error("Signin error:", error);
+      toast({
+        title: "Sign In Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = async () => {
-    // Validation
+    clearErrors();
+    let isValid = true;
+
     if (!username.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a username",
-        variant: "destructive",
-      });
-      return;
+      setUsernameError("Username is required.");
+      isValid = false;
     }
 
-    if (!validateEmail(email)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
+    if (!email || !validateEmail(email)) {
+      setEmailError("Please enter a valid email.");
+      isValid = false;
     }
 
-    if (!validatePassword(password)) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
+    if (!password) {
+      setPasswordError("Password is required.");
+      isValid = false;
     }
 
-    if (password !== confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords don't match",
-        variant: "destructive",
-      });
-      return;
+    if (!confirmPassword) {
+      setConfirmError("Please confirm your password.");
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      setConfirmError("Passwords do not match.");
+      isValid = false;
     }
+
+    if (!isValid) return;
 
     setLoading(true);
     try {
@@ -114,259 +164,278 @@ const AuthPage = () => {
     }
   };
 
-  const handleSignIn = async () => {
-    if (!validateEmail(email)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!password) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter your password",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast({
-            title: "Sign In Failed",
-            description: "Invalid email or password. Please check your credentials and try again.",
-            variant: "destructive",
-          });
-        } else if (error.message.includes("Email not confirmed")) {
-          toast({
-            title: "Email Not Verified",
-            description: "Please check your email and verify your account before signing in.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
-      }
-
-      if (data.user) {
-        const username = data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'there';
-        toast({
-          title: `Welcome back, ${username}! 🌟`,
-          description: "Successfully signed in. Ready to continue your wellness journey?",
-        });
-      }
-    } catch (error: any) {
-      console.error("Signin error:", error);
-      toast({
-        title: "Sign In Failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSignUp) {
+      handleSignUp();
+    } else {
+      handleSignIn();
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        
-        {/* Left side - Welcome content */}
-        <div className="space-y-8 text-center lg:text-left">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center lg:justify-start gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">M</span>
-              </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                MindMate
-              </h1>
+    <div style={{
+      fontFamily: 'Arial, sans-serif',
+      background: 'linear-gradient(120deg, #f2e8f7, #e8d4f0)',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div style={{
+        maxWidth: '400px',
+        margin: '50px auto',
+        textAlign: 'center' as const
+      }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column' as const,
+            alignItems: 'center'
+          }}>
+            <div style={{
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              backgroundColor: '#c7b8ea',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: '10px'
+            }}>
+              <span style={{
+                fontSize: '24px',
+                color: '#fff',
+                fontWeight: 'bold'
+              }}>M</span>
             </div>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Your personal AI companion for mental wellness. Get support, track your mood, and build healthy habits - all in one place.
-            </p>
-          </div>
-
-          {/* Features */}
-          <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Heart className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">24/7 Emotional Support</h3>
-                <p className="text-gray-600">Talk to your AI companion anytime you need someone to listen</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Brain className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Personalized Insights</h3>
-                <p className="text-gray-600">Track your mood patterns and receive tailored wellness strategies</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Shield className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Private & Secure</h3>
-                <p className="text-gray-600">Your conversations and data are completely private and secure</p>
-              </div>
-            </div>
+            <h1 style={{
+              fontSize: '30px',
+              marginBottom: '1px',
+              margin: '0'
+            }}>MindMate</h1>
+            <p style={{
+              color: '#666',
+              margin: '5px 0 0 0'
+            }}>Your AI Mental Health Companion</p>
           </div>
         </div>
 
-        {/* Right side - Auth form */}
-        <Card className="w-full max-w-md mx-auto shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome to MindMate</CardTitle>
-            <CardDescription>
-              Start your mental wellness journey today
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="signin" className="space-y-4 mt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="signin-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleSignIn} 
-                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+        <div style={{
+          backgroundColor: '#fff',
+          padding: '20px',
+          border: '1px solid #ddd',
+          borderRadius: '10px',
+          boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            margin: '0 auto 20px'
+          }}>
+            <Bot size={40} color="#806ab5" />
+          </div>
+
+          <h2 style={{
+            fontSize: '18px',
+            marginBottom: '5px'
+          }}>
+            {isSignUp ? 'Join MindMate' : 'Welcome Back'}
+          </h2>
+          <p style={{
+            color: '#666',
+            marginBottom: '20px'
+          }}>
+            {isSignUp 
+              ? 'Create an account to start your mental wellness journey'
+              : 'Log in to continue your mental wellness journey'
+            }
+          </p>
+
+          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+            {isSignUp && (
+              <>
+                <label htmlFor="username" style={{
+                  display: 'block',
+                  textAlign: 'left' as const,
+                  fontSize: 'small',
+                  marginBottom: '5px',
+                  fontWeight: 'bold'
+                }}>Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
-                >
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="signup" className="space-y-4 mt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Choose a username"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a password (6+ characters)"
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm your password"
-                      disabled={loading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleSignUp} 
-                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  style={{
+                    width: '95%',
+                    height: '20px',
+                    marginBottom: '15px',
+                    padding: '10px',
+                    border: 'none',
+                    borderRadius: '10px',
+                    backgroundColor: '#f5f5f5',
+                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                {usernameError && (
+                  <small style={{ color: 'red', display: 'block', marginBottom: '10px' }}>
+                    {usernameError}
+                  </small>
+                )}
+              </>
+            )}
+
+            <label htmlFor="email" style={{
+              display: 'block',
+              textAlign: 'left' as const,
+              fontSize: 'small',
+              marginBottom: '5px',
+              fontWeight: 'bold'
+            }}>Email</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              style={{
+                width: '95%',
+                height: '20px',
+                marginBottom: '15px',
+                padding: '10px',
+                border: 'none',
+                borderRadius: '10px',
+                backgroundColor: '#f5f5f5',
+                boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+              }}
+            />
+            {emailError && (
+              <small style={{ color: 'red', display: 'block', marginBottom: '10px' }}>
+                {emailError}
+              </small>
+            )}
+
+            <label htmlFor="password" style={{
+              display: 'block',
+              textAlign: 'left' as const,
+              fontSize: 'small',
+              marginBottom: '5px',
+              fontWeight: 'bold'
+            }}>Password</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              style={{
+                width: '95%',
+                height: '20px',
+                marginBottom: '15px',
+                padding: '10px',
+                border: 'none',
+                borderRadius: '10px',
+                backgroundColor: '#f5f5f5',
+                boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+              }}
+            />
+            {passwordError && (
+              <small style={{ color: 'red', display: 'block', marginBottom: '10px' }}>
+                {passwordError}
+              </small>
+            )}
+
+            {isSignUp && (
+              <>
+                <label htmlFor="confirm-password" style={{
+                  display: 'block',
+                  textAlign: 'left' as const,
+                  fontSize: 'small',
+                  marginBottom: '5px',
+                  fontWeight: 'bold'
+                }}>Confirm Password</label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={loading}
-                >
-                  {loading ? "Creating account..." : "Create Account"}
-                </Button>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                  style={{
+                    width: '95%',
+                    height: '20px',
+                    marginBottom: '15px',
+                    padding: '10px',
+                    border: 'none',
+                    borderRadius: '10px',
+                    backgroundColor: '#f5f5f5',
+                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                {confirmError && (
+                  <small style={{ color: 'red', display: 'block', marginBottom: '10px' }}>
+                    {confirmError}
+                  </small>
+                )}
+              </>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                height: '40px',
+                backgroundColor: '#806ab5',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: 'normal'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = '#b5a3d6';
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = '#806ab5';
+              }}
+            >
+              {loading ? (isSignUp ? 'Creating account...' : 'Signing in...') : (isSignUp ? 'Sign up' : 'Log in')}
+            </button>
+          </form>
+
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            style={{
+              width: '100%',
+              height: '40px',
+              marginTop: '10px',
+              backgroundColor: '#e0d4f5',
+              color: '#3f2d56',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#d0c2ec';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#e0d4f5';
+            }}
+          >
+            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+          </button>
+        </div>
       </div>
     </div>
   );
