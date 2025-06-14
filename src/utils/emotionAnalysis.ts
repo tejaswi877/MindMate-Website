@@ -3,45 +3,82 @@ export const analyzeEmotion = (message: string): string => {
   const lowerMessage = message.toLowerCase();
   
   // Crisis keywords - highest priority
-  const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'hurt myself', 'self harm', 'want to die', 'no point', 'give up'];
+  const crisisKeywords = [
+    'suicide', 'kill myself', 'end it all', 'hurt myself', 'self harm', 
+    'want to die', 'no point', 'give up', 'end my life', 'not worth living',
+    'better off dead', 'suicidal thoughts', 'kill me', 'want to disappear'
+  ];
   if (crisisKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'crisis';
   }
 
+  // Coping request keywords - specific request for help
+  const copingKeywords = [
+    'coping strategies', 'coping tips', 'help me cope', 'how to cope',
+    'coping mechanisms', 'stress management', 'anxiety tips', 'depression help',
+    'breathing exercises', 'relaxation techniques', 'mindfulness', 'meditation',
+    'grounding techniques', 'what should i do', 'how can i feel better',
+    'need advice', 'help with', 'strategies for', 'techniques for'
+  ];
+  if (copingKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return 'coping';
+  }
+
   // Anxiety keywords
-  const anxietyKeywords = ['anxious', 'anxiety', 'worried', 'panic', 'nervous', 'scared', 'fear', 'stress', 'overwhelmed', 'tense'];
+  const anxietyKeywords = [
+    'anxious', 'anxiety', 'worried', 'panic', 'nervous', 'scared', 'fear', 
+    'stress', 'overwhelmed', 'tense', 'restless', 'on edge', 'panic attack',
+    'heart racing', 'can\'t breathe', 'sweating', 'shaking', 'racing thoughts'
+  ];
   if (anxietyKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'anxiety';
   }
 
   // Depression keywords
-  const depressionKeywords = ['depressed', 'depression', 'sad', 'hopeless', 'empty', 'worthless', 'lonely', 'numb', 'dark', 'heavy'];
+  const depressionKeywords = [
+    'depressed', 'depression', 'sad', 'hopeless', 'empty', 'worthless', 
+    'lonely', 'numb', 'dark', 'heavy', 'exhausted', 'no energy', 'can\'t sleep',
+    'sleeping too much', 'no motivation', 'don\'t care', 'feel nothing'
+  ];
   if (depressionKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'depression';
   }
 
   // Anger keywords
-  const angerKeywords = ['angry', 'mad', 'furious', 'rage', 'irritated', 'frustrated', 'annoyed', 'pissed'];
+  const angerKeywords = [
+    'angry', 'mad', 'furious', 'rage', 'irritated', 'frustrated', 'annoyed', 
+    'pissed', 'hate', 'can\'t stand', 'sick of', 'fed up', 'outraged'
+  ];
   if (angerKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'anger';
   }
 
   // Positive keywords
-  const positiveKeywords = ['happy', 'good', 'great', 'excellent', 'wonderful', 'amazing', 'fantastic', 'grateful', 'thankful', 'blessed', 'joy'];
+  const positiveKeywords = [
+    'happy', 'good', 'great', 'excellent', 'wonderful', 'amazing', 'fantastic', 
+    'grateful', 'thankful', 'blessed', 'joy', 'excited', 'love', 'peaceful',
+    'content', 'accomplished', 'proud', 'optimistic', 'hopeful'
+  ];
   if (positiveKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'positive';
   }
 
-  // Coping request keywords
-  const copingKeywords = ['help', 'tips', 'advice', 'strategies', 'coping', 'cope', 'what can i do', 'how to', 'support'];
-  if (copingKeywords.some(keyword => lowerMessage.includes(keyword))) {
-    return 'coping';
-  }
-
-  // Sleep keywords
-  const sleepKeywords = ['sleep', 'insomnia', 'tired', 'exhausted', 'can\'t sleep', 'sleepless'];
+  // Sleep issues
+  const sleepKeywords = [
+    'sleep', 'insomnia', 'tired', 'exhausted', 'can\'t sleep', 'sleepless',
+    'nightmares', 'restless sleep', 'wake up', 'trouble sleeping'
+  ];
   if (sleepKeywords.some(keyword => lowerMessage.includes(keyword))) {
     return 'sleep';
+  }
+
+  // Check for negative sentiment
+  const negativeKeywords = [
+    'bad', 'terrible', 'awful', 'horrible', 'worst', 'hate', 'sucks',
+    'disappointed', 'upset', 'hurt', 'pain', 'struggling', 'difficult'
+  ];
+  if (negativeKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return 'negative';
   }
 
   return 'neutral';
