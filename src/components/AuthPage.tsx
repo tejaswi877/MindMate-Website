@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Bot, Mail, Lock, User } from "lucide-react";
+import { Bot } from "lucide-react";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -105,123 +105,167 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: 'linear-gradient(120deg, #f2e8f7, #e8d4f0)',
+        fontFamily: 'Arial, sans-serif'
+      }}
+    >
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Bot className="w-8 h-8 text-white" />
+        <div className="text-center mb-5">
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+              style={{ backgroundColor: '#c7b8ea' }}
+            >
+              <span className="text-2xl text-white font-bold">M</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">MindMate</h1>
+            <p className="text-gray-600">Your AI Mental Health Companion</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">MindMate</h1>
-          <p className="text-gray-600">Your AI Mental Health Companion</p>
         </div>
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {isSignUp ? "Create Account" : "Welcome Back"}
+        <div 
+          className="bg-white p-5 rounded-lg shadow-lg border border-gray-300"
+          style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}
+        >
+          <div className="text-center mb-5">
+            <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
+              <Bot className="w-10 h-10 text-gray-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-1">
+              {isSignUp ? "Join MindMate" : "Welcome Back"}
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 text-sm">
               {isSignUp 
-                ? "Start your mental wellness journey today"
-                : "Continue your mental wellness journey"
+                ? "Create an account to start your mental wellness journey"
+                : "Log in to continue your mental wellness journey"
               }
             </p>
           </div>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
+          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="mt-5">
             {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-4">
+                <label className="block text-left text-sm font-bold text-gray-700 mb-1">
                   Username
                 </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your username"
-                    disabled={loading}
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
+                  style={{ 
+                    backgroundColor: '#f5f5f5',
+                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
+                    width: '100%'
+                  }}
+                  placeholder="Enter your username"
+                  disabled={loading}
+                />
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-4">
+              <label className="block text-left text-sm font-bold text-gray-700 mb-1">
                 Email
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                  disabled={loading}
-                />
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
+                style={{ 
+                  backgroundColor: '#f5f5f5',
+                  boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
+                  width: '100%'
+                }}
+                placeholder="Enter your email"
+                disabled={loading}
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-4">
+              <label className="block text-left text-sm font-bold text-gray-700 mb-1">
                 Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                  disabled={loading}
-                />
-              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
+                style={{ 
+                  backgroundColor: '#f5f5f5',
+                  boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
+                  width: '100%'
+                }}
+                placeholder="Enter your password"
+                disabled={loading}
+              />
             </div>
 
             {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-4">
+                <label className="block text-left text-sm font-bold text-gray-700 mb-1">
                   Confirm Password
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Confirm your password"
-                    disabled={loading}
-                  />
-                </div>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
+                  style={{ 
+                    backgroundColor: '#f5f5f5',
+                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
+                    width: '100%'
+                  }}
+                  placeholder="Confirm your password"
+                  disabled={loading}
+                />
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+              className="w-full h-10 text-white border-none rounded-lg cursor-pointer font-medium transition-colors"
+              style={{ 
+                backgroundColor: '#806ab5',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#b5a3d6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#806ab5';
+              }}
             >
               {loading 
-                ? (isSignUp ? "Creating Account..." : "Signing In...") 
-                : (isSignUp ? "Create Account" : "Sign In")
+                ? (isSignUp ? "Creating Account..." : "Logging In...") 
+                : (isSignUp ? "Sign up" : "Log in")
               }
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-3">
             <button
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-purple-600 hover:text-purple-700 font-medium"
+              className="w-full h-10 border-none rounded-lg cursor-pointer font-bold transition-colors"
+              style={{ 
+                backgroundColor: '#e0d4f5',
+                color: '#3f2d56'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#d0c2ec';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#e0d4f5';
+              }}
             >
               {isSignUp 
-                ? "Already have an account? Sign In" 
+                ? "Already have an account? Log In" 
                 : "Don't have an account? Sign Up"
               }
             </button>
