@@ -20,16 +20,38 @@ const Index = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
         
         if (event === 'SIGNED_IN') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
+          
+          // Send welcome email
+          try {
+            await supabase.functions.invoke('send-welcome-email', {
+              body: {
+                userId: session?.user?.id,
+                email: session?.user?.email,
+                username: username
+              }
+            });
+          } catch (error) {
+            console.error('Failed to send welcome email:', error);
+          }
+
           toast({
-            title: `Welcome ${username}! 🎉`,
-            description: "Successfully signed in to MindMate. Your mental wellness journey continues!",
+            title: `Welcome to MindMate, ${username}! 🎉`,
+            description: "Start your mental wellness journey today. Check your email for a welcome message!",
+          });
+        }
+        
+        if (event === 'SIGNED_UP') {
+          const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
+          toast({
+            title: `Welcome to MindMate, ${username}! 🌟`,
+            description: "Your account has been created successfully. Begin your journey to better mental health!",
           });
         }
         

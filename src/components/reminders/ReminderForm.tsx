@@ -85,7 +85,7 @@ const ReminderForm = ({ user, isCreating, editingReminder, onSuccess, onCancel }
         if (error) throw error;
         toast({
           title: "Reminder Created! ⏰",
-          description: `Your reminder is set for ${reminderDateTime.toLocaleDateString()} at ${reminderDateTime.toLocaleTimeString()}`,
+          description: `Your reminder is set for ${reminderDateTime.toLocaleDateString()} at ${reminderDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
         });
       } else if (editingReminder) {
         const { error } = await supabase

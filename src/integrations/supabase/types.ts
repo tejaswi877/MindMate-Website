@@ -155,7 +155,8 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
-          reminder_time: string
+          reminder_datetime: string | null
+          reminder_time: string | null
           title: string
           user_id: string
         }
@@ -164,7 +165,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          reminder_time: string
+          reminder_datetime?: string | null
+          reminder_time?: string | null
           title: string
           user_id: string
         }
@@ -173,7 +175,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          reminder_time?: string
+          reminder_datetime?: string | null
+          reminder_time?: string | null
           title?: string
           user_id?: string
         }
