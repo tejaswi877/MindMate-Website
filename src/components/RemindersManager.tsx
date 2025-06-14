@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +20,7 @@ interface Reminder {
   title: string;
   description: string;
   reminder_time: string;
-  reminder_datetime: string;
+  reminder_datetime?: string; // Make this optional to handle existing data
   is_active: boolean;
   created_at: string;
 }
@@ -94,7 +95,8 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
         .order("reminder_datetime", { ascending: true });
 
       if (error) throw error;
-      setReminders(data || []);
+      // Cast the data to match our interface
+      setReminders((data as Reminder[]) || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -256,7 +258,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
     setEditingId(null);
   };
 
-  const formatDateTime = (datetime: string) => {
+  const formatDateTime = (datetime: string | undefined) => {
     if (!datetime) return "No date set";
     const date = new Date(datetime);
     return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
