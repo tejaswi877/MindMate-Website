@@ -24,7 +24,9 @@ const ChatBot = ({ user }: ChatBotProps) => {
 
   const {
     sessionId,
+    setSessionId,
     previousSessions,
+    loadPreviousSessions,
     createNewChatSession,
     initializeChat,
     loadChatSession,
@@ -64,15 +66,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
         const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
         const welcomeMessage = {
           id: "welcome",
-          message: `Hello ${username}! 👋 I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen, provide support, and share coping strategies whenever you need them. 
-
-💜 **What I can help with:**
-• Emotional support and active listening
-• Coping strategies based on your specific needs
-• Crisis support resources when needed
-• Mental wellness education and tips
-
-Feel free to share whatever is on your mind - this is a safe, judgment-free space. 🌟`,
+          message: `Hello ${username}! 👋 I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen, provide support, and share coping strategies whenever you need them. 🌟`,
           is_bot: true,
           created_at: new Date().toISOString(),
         };
@@ -89,6 +83,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
       setMessages([]);
       setShowPreviousSessions(false);
       
+      // Add welcome message for new session
       const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
       const welcomeMessage = {
         id: "welcome-new",
@@ -104,6 +99,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
     if (!sessionId) return;
 
     try {
+      // Delete all messages in current session
       const { error } = await supabase
         .from("chat_messages")
         .delete()
@@ -111,6 +107,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
 
       if (error) throw error;
 
+      // Reset messages with welcome message
       const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
       const welcomeMessage = {
         id: "welcome-clear",
@@ -142,6 +139,13 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
     }
   };
 
+  const handleInitializeChat = async () => {
+    const sessionId = await initializeChat();
+    if (sessionId) {
+      await loadMessagesForSession(sessionId);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !sessionId || loading) return;
 
@@ -167,7 +171,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
       // Add user message to UI immediately
       setMessages(prev => [...prev, savedUserMessage]);
 
-      // Generate bot response
+      // Generate bot response based on emotion analysis
       const botResponse = generateBotResponse(userMessage);
 
       // Add bot message to database
@@ -191,7 +195,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
       console.error("Error sending message:", error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to send message",
         variant: "destructive",
       });
     } finally {
@@ -211,14 +215,14 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
   };
 
   return (
-    <Card className="h-[700px] flex flex-col shadow-xl border-purple-200 bg-white/95 backdrop-blur-sm">
-      <CardHeader className="pb-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg border-b border-purple-100">
+    <Card className="h-[700px] flex flex-col shadow-lg border-purple-200">
+      <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
         <ChatHeader
           showPreviousSessions={showPreviousSessions}
           setShowPreviousSessions={setShowPreviousSessions}
           createNewChatSession={handleCreateNewChatSession}
           clearCurrentChat={clearCurrentChat}
-          initializeChat={initializeAndLoadMessages}
+          initializeChat={handleInitializeChat}
         />
       </CardHeader>
       
@@ -255,7 +259,7 @@ Feel free to share whatever is on your mind - this is a safe, judgment-free spac
                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-xs text-gray-500">MindMate is thinking...</span>
+                  <span className="text-xs text-gray-500">MindMate is typing...</span>
                 </div>
               </div>
             </div>

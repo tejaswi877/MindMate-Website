@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Mail, Lock, User } from "lucide-react";
+import { Bot } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const AuthPage = () => {
@@ -14,57 +15,37 @@ const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const validateForm = () => {
-    if (!email || !password) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return false;
-    }
+    const newErrors: {[key: string]: string} = {};
 
+    // Email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      });
-      return false;
+    if (!email || !emailPattern.test(email)) {
+      newErrors.email = "Please enter a valid email.";
     }
 
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password cannot be empty.";
+    }
+
+    // For signup, validate additional fields
     if (!isLogin) {
       if (!username.trim()) {
-        toast({
-          title: "Username Required",
-          description: "Please enter a username.",
-          variant: "destructive",
-        });
-        return false;
+        newErrors.username = "Username is required.";
       }
       
-      if (password !== confirmPassword) {
-        toast({
-          title: "Password Mismatch",
-          description: "Passwords do not match.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      if (password.length < 6) {
-        toast({
-          title: "Password Too Short",
-          description: "Password must be at least 6 characters long.",
-          variant: "destructive",
-        });
-        return false;
+      if (!confirmPassword) {
+        newErrors.confirmPassword = "Please confirm your password.";
+      } else if (password !== confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match.";
       }
     }
 
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -83,24 +64,6 @@ const AuthPage = () => {
           password,
         });
         if (error) throw error;
-
-        // Send welcome back email
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email,
-              username: email.split('@')[0],
-              isSignup: false,
-            },
-          });
-        } catch (emailError) {
-          console.error('Error sending welcome email:', emailError);
-        }
-
-        toast({
-          title: "Welcome back! 🎉",
-          description: "Successfully signed in to MindMate.",
-        });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -111,40 +74,15 @@ const AuthPage = () => {
           }
         });
         if (error) throw error;
-
-        // Send welcome email
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email,
-              username,
-              isSignup: true,
-            },
-          });
-        } catch (emailError) {
-          console.error('Error sending welcome email:', emailError);
-        }
-
         toast({
-          title: "Welcome to MindMate! 🌟",
-          description: "Account created successfully! Please check your email to verify your account.",
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account.",
         });
       }
     } catch (error: any) {
-      let errorMessage = error.message;
-      
-      // Handle specific error cases
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (error.message.includes('User already registered')) {
-        errorMessage = "An account with this email already exists. Please try signing in instead.";
-      } else if (error.message.includes('Password should be at least 6 characters')) {
-        errorMessage = "Password must be at least 6 characters long.";
-      }
-
       toast({
         title: "Authentication Error",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -153,142 +91,167 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
-              <Bot className="w-8 h-8 text-white" />
+    <div className="min-h-screen" style={{
+      background: "linear-gradient(120deg, #f2e8f7, #e8d4f0)",
+      fontFamily: "Arial, sans-serif"
+    }}>
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-sm">
+          {/* Header */}
+          <div className="text-center mb-5">
+            <div className="flex flex-col items-center mb-5">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{backgroundColor: "#c7b8ea"}}>
+                <span className="text-2xl text-white font-bold">M</span>
+              </div>
+              <h1 className="text-3xl font-bold mb-1">MindMate</h1>
+              <p className="text-gray-600 text-sm">Your AI Mental Health Companion</p>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              MindMate
-            </h1>
-            <p className="text-gray-600 text-lg">Your AI Mental Health Companion</p>
           </div>
-        </div>
 
-        {/* Auth Card */}
-        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-800">
+          {/* Login/Signup Box */}
+          <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-200">
+            {/* Icon */}
+            <div className="flex justify-center mb-5">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Bot className="w-10 h-10 text-purple-600" />
+              </div>
+            </div>
+
+            <h2 className="text-lg font-semibold text-center mb-1">
               {isLogin ? "Welcome Back" : "Join MindMate"}
-            </CardTitle>
-            <CardDescription className="text-gray-600">
+            </h2>
+            <p className="text-gray-600 text-center text-sm mb-5">
               {isLogin 
-                ? "Continue your mental wellness journey"
-                : "Start your mental wellness journey today"
+                ? "Log in to continue your mental wellness journey"
+                : "Create an account to start your mental wellness journey"
               }
-            </CardDescription>
-          </CardHeader>
+            </p>
 
-          <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
               {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-medium text-gray-700">
+                <div>
+                  <Label htmlFor="username" className="block text-left text-sm font-bold mb-1">
                     Username
                   </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="username"
-                      type="text"
-                      placeholder="Choose a username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                    />
-                  </div>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                    }}
+                  />
+                  {errors.username && (
+                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.username}</small>
+                  )}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <div>
+                <Label htmlFor="email" className="block text-left text-sm font-bold mb-1">
                   Email
                 </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                  />
-                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                  }}
+                />
+                {errors.email && (
+                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.email}</small>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <div>
+                <Label htmlFor="password" className="block text-left text-sm font-bold mb-1">
                   Password
                 </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                  />
-                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                  }}
+                />
+                {errors.password && (
+                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.password}</small>
+                )}
               </div>
 
               {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
+                <div>
+                  <Label htmlFor="confirm-password" className="block text-left text-sm font-bold mb-1">
                     Confirm Password
                   </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 h-12 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                    />
-                  </div>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                    }}
+                  />
+                  {errors.confirmPassword && (
+                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.confirmPassword}</small>
+                  )}
                 </div>
               )}
 
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="w-full h-10 border-none rounded-xl cursor-pointer font-medium"
+                style={{
+                  backgroundColor: "#806ab5",
+                  color: "#fff"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#b5a3d6"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#806ab5"}
               >
-                {loading ? "Processing..." : (isLogin ? "Sign In" : "Create Account")}
+                {loading ? "Loading..." : (isLogin ? "Log in" : "Sign up")}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
+            <div className="mt-4 text-center">
+              <Button
+                variant="link"
                 onClick={() => {
                   setIsLogin(!isLogin);
-                  setEmail("");
-                  setPassword("");
-                  setConfirmPassword("");
-                  setUsername("");
+                  setErrors({});
                 }}
-                className="text-purple-600 hover:text-purple-800 font-medium transition-colors"
+                className="w-full h-10 mt-2 rounded-xl font-bold cursor-pointer"
+                style={{
+                  backgroundColor: "#e0d4f5",
+                  color: "#3f2d56"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#d0c2ec"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e0d4f5"}
               >
                 {isLogin
-                  ? "Need an account? Sign up here"
+                  ? "Need an account? Sign up"
                   : "Already have an account? Sign in"}
-              </button>
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>🔒 Your privacy and security are our top priority</p>
-          <p className="mt-1">💜 We're here to support your mental wellness journey</p>
+          </div>
         </div>
       </div>
     </div>
