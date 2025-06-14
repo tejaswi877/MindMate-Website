@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, AuthChangeEvent } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import AuthPage from "@/components/AuthPage";
 import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ const Index = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
         setUser(session?.user ?? null);
         setLoading(false);
