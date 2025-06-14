@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import AuthPage from "@/components/AuthPage";
-import Dashboard from "@/components/Dashboard";
 import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
 
@@ -27,23 +26,9 @@ const Index = () => {
         
         if (event === 'SIGNED_IN') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
-          
-          // Send welcome email
-          try {
-            await supabase.functions.invoke('send-welcome-email', {
-              body: {
-                userId: session?.user?.id,
-                email: session?.user?.email,
-                username: username
-              }
-            });
-          } catch (error) {
-            console.error('Failed to send welcome email:', error);
-          }
-
           toast({
             title: `Welcome to MindMate, ${username}! 🎉`,
-            description: "Start your mental wellness journey today. Check your email for a welcome message!",
+            description: "Start your mental wellness journey today.",
           });
         }
         
@@ -79,9 +64,28 @@ const Index = () => {
     );
   }
 
+  // Simple welcome page for authenticated users
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">Welcome to MindMate!</h1>
+          <p className="text-gray-600 mb-6">You're successfully logged in as {user.email}</p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
-      {user ? <Dashboard user={user} /> : <AuthPage />}
+      <AuthPage />
       <Toaster />
     </div>
   );
