@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HeartHandshake, Phone, MessageCircle, Globe, Clock, AlertTriangle } from "lucide-react";
+import EmergencyContactsManager from "./EmergencyContactsManager";
 
 const CrisisSupport = () => {
   const crisisResources = [
@@ -120,6 +121,9 @@ const CrisisSupport = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Personal Emergency Contacts */}
+      <EmergencyContactsManager />
 
       {/* National Crisis Resources */}
       <Card>
