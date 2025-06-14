@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -68,24 +67,6 @@ const AuthPage = () => {
     return true;
   };
 
-  const sendWelcomeEmail = async (email: string, username: string, isSignup: boolean) => {
-    try {
-      await fetch('/functions/v1/send-welcome-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          username,
-          isSignup,
-        }),
-      });
-    } catch (error) {
-      console.error('Error sending welcome email:', error);
-    }
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -104,7 +85,17 @@ const AuthPage = () => {
         if (error) throw error;
 
         // Send welcome back email
-        await sendWelcomeEmail(email, email.split('@')[0], false);
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email,
+              username: email.split('@')[0],
+              isSignup: false,
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending welcome email:', emailError);
+        }
 
         toast({
           title: "Welcome back! 🎉",
@@ -122,7 +113,17 @@ const AuthPage = () => {
         if (error) throw error;
 
         // Send welcome email
-        await sendWelcomeEmail(email, username, true);
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email,
+              username,
+              isSignup: true,
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending welcome email:', emailError);
+        }
 
         toast({
           title: "Welcome to MindMate! 🌟",
@@ -130,9 +131,20 @@ const AuthPage = () => {
         });
       }
     } catch (error: any) {
+      let errorMessage = error.message;
+      
+      // Handle specific error cases
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (error.message.includes('User already registered')) {
+        errorMessage = "An account with this email already exists. Please try signing in instead.";
+      } else if (error.message.includes('Password should be at least 6 characters')) {
+        errorMessage = "Password must be at least 6 characters long.";
+      }
+
       toast({
         title: "Authentication Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
