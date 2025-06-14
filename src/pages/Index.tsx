@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, AuthChangeEvent } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import AuthPage from "@/components/AuthPage";
 import Dashboard from "@/components/Dashboard";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,7 +25,7 @@ const Index = () => {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        if (event === AuthChangeEvent.SIGNED_IN) {
+        if (event === 'SIGNED_IN') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome to MindMate, ${username}! 🎉`,
@@ -33,7 +33,7 @@ const Index = () => {
           });
         }
         
-        if (event === AuthChangeEvent.SIGNED_UP) {
+        if (event === 'SIGNED_UP') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome to MindMate, ${username}! 🌟`,
@@ -41,7 +41,7 @@ const Index = () => {
           });
         }
         
-        if (event === AuthChangeEvent.SIGNED_OUT) {
+        if (event === 'SIGNED_OUT') {
           toast({
             title: "See you soon! 👋",
             description: "You've been signed out. Remember, we're here whenever you need support.",
