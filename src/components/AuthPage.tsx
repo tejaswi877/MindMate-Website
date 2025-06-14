@@ -134,7 +134,7 @@ const AuthPage = () => {
         >
           <div className="text-center mb-5">
             <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
-              <Bot className="w-10 h-10 text-gray-600" />
+              <Bot className="w-10 h-10" style={{ color: '#806ab5' }} />
             </div>
             <h2 className="text-lg font-semibold text-gray-800 mb-1">
               {isSignUp ? "Join MindMate" : "Welcome Back"}
