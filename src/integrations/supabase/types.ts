@@ -11,29 +11,29 @@ export type Database = {
     Tables: {
       chat_messages: {
         Row: {
-          created_at: string | null
+          created_at: string
+          emotion_detected: string | null
           id: string
-          is_bot: boolean | null
+          is_bot: boolean
           message: string
-          sentiment_score: number | null
           session_id: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
+          emotion_detected?: string | null
           id?: string
-          is_bot?: boolean | null
+          is_bot?: boolean
           message: string
-          sentiment_score?: number | null
           session_id: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
+          emotion_detected?: string | null
           id?: string
-          is_bot?: boolean | null
+          is_bot?: boolean
           message?: string
-          sentiment_score?: number | null
           session_id?: string
           user_id?: string
         }
@@ -49,21 +49,21 @@ export type Database = {
       }
       chat_sessions: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          session_name: string | null
+          session_name: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          session_name?: string | null
+          session_name: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          session_name?: string | null
+          session_name?: string
           user_id?: string
         }
         Relationships: []
@@ -127,18 +127,24 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
+          email: string | null
           id: string
+          updated_at: string
           username: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
+          email?: string | null
           id: string
+          updated_at?: string
           username?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
+          email?: string | null
           id?: string
+          updated_at?: string
           username?: string | null
         }
         Relationships: []

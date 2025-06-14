@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Clock, Edit, Trash2, Save, X } from "lucide-react";
+import { Plus, Clock, Edit, Trash2, Save, X, Bell } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface RemindersManagerProps {
@@ -20,6 +19,7 @@ interface Reminder {
   title: string;
   description: string;
   reminder_time: string;
+  reminder_datetime: string;
   is_active: boolean;
   created_at: string;
 }
@@ -30,11 +30,59 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [reminderDate, setReminderDate] = useState("");
   const [reminderTime, setReminderTime] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchReminders();
+    // Check for reminders every minute
+    const interval = setInterval(checkReminders, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const checkReminders = async () => {
+    const now = new Date();
+    const currentTime = now.toISOString();
+
+    const { data: dueReminders } = await supabase
+      .from("reminders")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .lte("reminder_datetime", currentTime);
+
+    if (dueReminders && dueReminders.length > 0) {
+      dueReminders.forEach((reminder) => {
+        // Show popup notification
+        if (Notification.permission === "granted") {
+          new Notification("MindMate Reminder", {
+            body: reminder.title,
+            icon: "/favicon.ico"
+          });
+        }
+        
+        // Show toast notification
+        toast({
+          title: "🔔 Reminder",
+          description: reminder.title,
+          duration: 10000,
+        });
+
+        // Deactivate the reminder after showing
+        supabase
+          .from("reminders")
+          .update({ is_active: false })
+          .eq("id", reminder.id);
+      });
+    }
+  };
+
+  // Request notification permission on component mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, []);
 
   const fetchReminders = async () => {
@@ -43,7 +91,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
         .from("reminders")
         .select("*")
         .eq("user_id", user.id)
-        .order("reminder_time", { ascending: true });
+        .order("reminder_datetime", { ascending: true });
 
       if (error) throw error;
       setReminders(data || []);
@@ -57,10 +105,20 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
   };
 
   const handleSaveReminder = async () => {
-    if (!title.trim() || !reminderTime) {
+    if (!title.trim() || !reminderDate || !reminderTime) {
       toast({
         title: "Validation Error",
-        description: "Please fill in title and time",
+        description: "Please fill in title, date, and time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reminderDateTime = new Date(`${reminderDate}T${reminderTime}`);
+    if (reminderDateTime <= new Date()) {
+      toast({
+        title: "Invalid Date",
+        description: "Please select a future date and time",
         variant: "destructive",
       });
       return;
@@ -78,6 +136,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
               title: title.trim(),
               description: description.trim(),
               reminder_time: reminderTime,
+              reminder_datetime: reminderDateTime.toISOString(),
               is_active: true,
             },
           ]);
@@ -85,7 +144,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
         if (error) throw error;
         toast({
           title: "Reminder Created! ⏰",
-          description: "Your reminder has been saved.",
+          description: `Your reminder is set for ${reminderDateTime.toLocaleDateString()} at ${reminderDateTime.toLocaleTimeString()}`,
         });
       } else if (editingId) {
         // Update existing reminder
@@ -95,6 +154,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
             title: title.trim(),
             description: description.trim(),
             reminder_time: reminderTime,
+            reminder_datetime: reminderDateTime.toISOString(),
           })
           .eq("id", editingId);
 
@@ -180,31 +240,27 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
     setEditingId(reminder.id);
     setTitle(reminder.title);
     setDescription(reminder.description);
-    setReminderTime(reminder.reminder_time);
+    if (reminder.reminder_datetime) {
+      const datetime = new Date(reminder.reminder_datetime);
+      setReminderDate(datetime.toISOString().split('T')[0]);
+      setReminderTime(datetime.toTimeString().slice(0, 5));
+    }
   };
 
   const resetForm = () => {
     setTitle("");
     setDescription("");
+    setReminderDate("");
     setReminderTime("");
     setIsCreating(false);
     setEditingId(null);
   };
 
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const formatDateTime = (datetime: string) => {
+    if (!datetime) return "No date set";
+    const date = new Date(datetime);
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
-
-  const suggestedReminders = [
-    { title: "Morning Check-in", description: "How are you feeling today?", time: "09:00" },
-    { title: "Midday Mood", description: "Take a moment to assess your mood", time: "12:00" },
-    { title: "Evening Reflection", description: "Reflect on your day and journal", time: "18:00" },
-    { title: "Bedtime Gratitude", description: "Think of three things you're grateful for", time: "21:00" },
-  ];
 
   return (
     <div className="space-y-6">
@@ -223,13 +279,24 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
                 placeholder="Reminder title..."
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Time</label>
-              <Input
-                type="time"
-                value={reminderTime}
-                onChange={(e) => setReminderTime(e.target.value)}
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Date</label>
+                <Input
+                  type="date"
+                  value={reminderDate}
+                  onChange={(e) => setReminderDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Time</label>
+                <Input
+                  type="time"
+                  value={reminderTime}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Description (optional)</label>
@@ -258,7 +325,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+            <Bell className="h-5 w-5" />
             Your Reminders ({reminders.length})
           </CardTitle>
           {!isCreating && !editingId && (
@@ -283,7 +350,7 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-medium">{reminder.title}</h3>
                         <Badge variant={reminder.is_active ? "default" : "secondary"}>
-                          {formatTime(reminder.reminder_time)}
+                          {formatDateTime(reminder.reminder_datetime)}
                         </Badge>
                         <Badge variant="outline">
                           {reminder.is_active ? "Active" : "Disabled"}
@@ -326,39 +393,6 @@ const RemindersManager = ({ user }: RemindersManagerProps) => {
           )}
         </CardContent>
       </Card>
-
-      {/* Suggested Reminders */}
-      {!isCreating && !editingId && reminders.length === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Suggested Reminders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-3">
-              {suggestedReminders.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => {
-                    setTitle(suggestion.title);
-                    setDescription(suggestion.description);
-                    setReminderTime(suggestion.time);
-                    setIsCreating(true);
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium text-sm">{suggestion.title}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {formatTime(suggestion.time)}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-600">{suggestion.description}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

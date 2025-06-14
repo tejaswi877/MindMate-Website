@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Bot } from "lucide-react";
+import { Send, Bot, History, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Message, ChatBotProps } from "@/types/chat";
 import { generateBotResponse } from "@/utils/botResponses";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import ChatMessage from "@/components/chat/ChatMessage";
-import ChatHeader from "@/components/chat/ChatHeader";
 import ChatSessionsList from "@/components/chat/ChatSessionsList";
 
 const ChatBot = ({ user }: ChatBotProps) => {
@@ -66,7 +65,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
         const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
         const welcomeMessage = {
           id: "welcome",
-          message: `Hello ${username}! 👋 I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen, provide support, and share coping strategies whenever you need them. 🌟`,
+          message: `Hello ${username}! 👋 I'm MindMate, your caring AI companion. I'm here to listen, support, and walk alongside you on your mental wellness journey. Feel free to share anything that's on your mind - your feelings, thoughts, or anything you'd like to talk about. This is your safe space. 💜`,
           is_bot: true,
           created_at: new Date().toISOString(),
         };
@@ -87,47 +86,11 @@ const ChatBot = ({ user }: ChatBotProps) => {
       const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
       const welcomeMessage = {
         id: "welcome-new",
-        message: `Hello ${username}! 👋 Welcome to a new chat session. I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
+        message: `Hello again, ${username}! 👋 Ready for a fresh conversation? I'm here to listen and support you with whatever you'd like to share today. How are you feeling right now? 🌟`,
         is_bot: true,
         created_at: new Date().toISOString(),
       };
       setMessages([welcomeMessage]);
-    }
-  };
-
-  const clearCurrentChat = async () => {
-    if (!sessionId) return;
-
-    try {
-      // Delete all messages in current session
-      const { error } = await supabase
-        .from("chat_messages")
-        .delete()
-        .eq("session_id", sessionId);
-
-      if (error) throw error;
-
-      // Reset messages with welcome message
-      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
-      const welcomeMessage = {
-        id: "welcome-clear",
-        message: `Hello ${username}! 👋 Chat cleared! I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
-        is_bot: true,
-        created_at: new Date().toISOString(),
-      };
-      setMessages([welcomeMessage]);
-
-      toast({
-        title: "Chat Cleared",
-        description: "All messages have been removed from this session",
-      });
-    } catch (error: any) {
-      console.error("Error clearing chat:", error);
-      toast({
-        title: "Error",
-        description: "Failed to clear chat",
-        variant: "destructive",
-      });
     }
   };
 
@@ -136,13 +99,6 @@ const ChatBot = ({ user }: ChatBotProps) => {
     if (loadedSessionId) {
       await loadMessagesForSession(loadedSessionId);
       setShowPreviousSessions(false);
-    }
-  };
-
-  const handleInitializeChat = async () => {
-    const sessionId = await initializeChat();
-    if (sessionId) {
-      await loadMessagesForSession(sessionId);
     }
   };
 
@@ -215,15 +171,43 @@ const ChatBot = ({ user }: ChatBotProps) => {
   };
 
   return (
-    <Card className="h-[700px] flex flex-col shadow-lg border-purple-200">
+    <Card className="h-[500px] flex flex-col shadow-lg border-purple-200">
       <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
-        <ChatHeader
-          showPreviousSessions={showPreviousSessions}
-          setShowPreviousSessions={setShowPreviousSessions}
-          createNewChatSession={handleCreateNewChatSession}
-          clearCurrentChat={clearCurrentChat}
-          initializeChat={handleInitializeChat}
-        />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+              <Bot className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Chat with MindMate
+              </h3>
+              <p className="text-sm text-muted-foreground font-normal">
+                Your caring AI companion 💜
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowPreviousSessions(!showPreviousSessions)}
+              className="hover:bg-purple-50"
+              title="Previous Chats"
+            >
+              <History className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCreateNewChatSession}
+              className="hover:bg-purple-50"
+              title="New Chat"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-0">
@@ -236,7 +220,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-6 p-6 bg-gradient-to-b from-purple-25 to-blue-25">
+        <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-gradient-to-b from-purple-25 to-blue-25">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
@@ -252,14 +236,14 @@ const ChatBot = ({ user }: ChatBotProps) => {
                   <Bot className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="bg-white border border-purple-100 p-4 rounded-2xl shadow-sm">
+              <div className="bg-white border border-purple-100 p-3 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                     <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-xs text-gray-500">MindMate is typing...</span>
+                  <span className="text-xs text-gray-500">MindMate is thinking...</span>
                 </div>
               </div>
             </div>
@@ -273,7 +257,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Share what's on your mind... I'm here to listen and support you 💜"
+              placeholder="Share what's on your mind... I'm here to listen 💜"
               onKeyPress={handleKeyPress}
               disabled={loading}
               className="flex-1 border-purple-200 focus:border-purple-400 focus:ring-purple-400"
@@ -287,7 +271,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Press Enter to send • MindMate provides emotional support and coping strategies
+            Press Enter to send • Your caring AI companion is here for you
           </p>
         </div>
       </CardContent>
