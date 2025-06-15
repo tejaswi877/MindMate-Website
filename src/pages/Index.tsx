@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -14,6 +15,22 @@ const Index = () => {
   useEffect(() => {
     // Clear any existing session and force logout
     const resetAndStartFresh = async () => {
+      // Get current user before signing out
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (currentUser) {
+        // Clear all chat data for the user
+        await supabase
+          .from("chat_messages")
+          .delete()
+          .eq("user_id", currentUser.id);
+          
+        await supabase
+          .from("chat_sessions")
+          .delete()
+          .eq("user_id", currentUser.id);
+      }
+      
       // Sign out any existing user
       await supabase.auth.signOut();
       
@@ -100,3 +117,4 @@ const Index = () => {
 };
 
 export default Index;
+
