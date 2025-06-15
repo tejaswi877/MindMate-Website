@@ -171,7 +171,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
   };
 
   return (
-    <Card className="h-[500px] flex flex-col shadow-lg border-purple-200">
+    <Card className="h-[400px] flex flex-col shadow-lg border-purple-200">
       <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

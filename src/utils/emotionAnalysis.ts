@@ -8,6 +8,38 @@ export const analyzeEmotion = (message: string): string => {
     return 'crisis';
   }
 
+  // Website/feature questions - check early
+  const websitePatterns = [
+    /what is this/,
+    /how (does|do) (this|it|mindmate) work/,
+    /how to use/,
+    /what can (you|this|mindmate) do/,
+    /features/,
+    /help with (website|app|mindmate)/,
+    /what are your capabilities/,
+    /tell me about (this|mindmate)/
+  ];
+  
+  if (websitePatterns.some(pattern => pattern.test(lowerMessage))) {
+    return 'website_help';
+  }
+
+  // Help/guidance seeking patterns
+  const helpPatterns = [
+    /need (help|advice|support|guidance)/,
+    /what should i do/,
+    /how (can|do) i/,
+    /any (tips|suggestions|advice)/,
+    /help me (with|understand)/,
+    /don't know what to do/,
+    /looking for (help|advice|tips)/,
+    /can you (help|suggest|advise)/
+  ];
+  
+  if (helpPatterns.some(pattern => pattern.test(lowerMessage))) {
+    return 'seeking_help';
+  }
+
   // Negative emotion patterns - improved detection
   const negativePatterns = [
     /not feeling (good|well|okay|fine)/,
@@ -63,34 +95,6 @@ export const analyzeEmotion = (message: string): string => {
   
   if (positivePatterns.some(pattern => pattern.test(lowerMessage))) {
     return 'positive';
-  }
-
-  // Help/guidance seeking patterns
-  const helpPatterns = [
-    /need (help|advice|support|guidance)/,
-    /what should i do/,
-    /how (can|do) i/,
-    /any (tips|suggestions|advice)/,
-    /help me/,
-    /don't know what to do/
-  ];
-  
-  if (helpPatterns.some(pattern => pattern.test(lowerMessage))) {
-    return 'seeking_help';
-  }
-
-  // Website/feature questions
-  const websitePatterns = [
-    /what is this/,
-    /how (does|do) (this|it) work/,
-    /how to use/,
-    /what can (you|this) do/,
-    /features/,
-    /help with (website|app|mindmate)/
-  ];
-  
-  if (websitePatterns.some(pattern => pattern.test(lowerMessage))) {
-    return 'website_help';
   }
 
   return 'neutral';

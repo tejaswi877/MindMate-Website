@@ -228,8 +228,10 @@ const Journal = ({ user }: JournalProps) => {
                 onClick={() => {
                   if (!isCreating && !isEditing) {
                     setSelectedEntry(entry);
-                    setTitle(entry.title);
-                    setContent(entry.content);
+                    if (!entry.is_locked) {
+                      setTitle(entry.title);
+                      setContent(entry.content);
+                    }
                   }
                 }}
                 className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
@@ -246,7 +248,7 @@ const Journal = ({ user }: JournalProps) => {
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {entry.content}
+                  {entry.is_locked ? "🔒 This entry is locked" : entry.content}
                 </p>
               </div>
             ))}
