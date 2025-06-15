@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -11,11 +12,27 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // Clear any existing session and force logout
+    const resetAndStartFresh = async () => {
+      // Sign out any existing user
+      await supabase.auth.signOut();
+      
+      // Clear local storage
+      localStorage.clear();
+      
+      // Clear session storage
+      sessionStorage.clear();
+      
+      setUser(null);
       setLoading(false);
-    });
+      
+      toast({
+        title: "Welcome to MindMate! 🌟",
+        description: "Please sign up or log in to start your mental wellness journey.",
+      });
+    };
+
+    resetAndStartFresh();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -57,7 +74,7 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading MindMate...</h2>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Starting Fresh...</h2>
           <p className="text-gray-500">Preparing your mental wellness companion</p>
         </div>
       </div>
