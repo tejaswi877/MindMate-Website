@@ -8,20 +8,68 @@ export const analyzeEmotion = (message: string): string => {
     return 'crisis';
   }
 
-  // Website/feature questions - check early
+  // Website/feature questions - expanded patterns
   const websitePatterns = [
-    /what is this/,
+    /what is (this|mindmate)/,
     /how (does|do) (this|it|mindmate) work/,
     /how to use/,
     /what can (you|this|mindmate) do/,
-    /features/,
+    /what are (your|mindmate|the) (features|capabilities)/,
     /help with (website|app|mindmate)/,
-    /what are your capabilities/,
-    /tell me about (this|mindmate)/
+    /tell me about (this|mindmate)/,
+    /what services/,
+    /mindmate features/,
+    /app features/,
+    /how does (chat|mood|journal|breathing|badges) work/,
+    /explain (mindmate|features)/,
+    /what is available/,
+    /show me features/
   ];
   
   if (websitePatterns.some(pattern => pattern.test(lowerMessage))) {
     return 'website_help';
+  }
+
+  // Coping strategies requests - new category
+  const copingPatterns = [
+    /how to (reduce|manage|cope with|deal with|handle) (stress|anxiety|depression|anger|sadness|worry)/,
+    /coping (strategies|techniques|methods|skills)/,
+    /stress (relief|management|reduction)/,
+    /anxiety (relief|help|techniques)/,
+    /relaxation (techniques|methods)/,
+    /breathing (exercises|techniques)/,
+    /mindfulness/,
+    /meditation/,
+    /grounding (techniques|exercises)/,
+    /self care/,
+    /how to feel better/,
+    /ways to (relax|calm down|unwind)/,
+    /mental health (tips|strategies)/,
+    /emotional (regulation|coping)/
+  ];
+
+  if (copingPatterns.some(pattern => pattern.test(lowerMessage))) {
+    return 'coping_strategies';
+  }
+
+  // Situational questions - new category
+  const situationalPatterns = [
+    /(what should i do|help me) (when|if)/,
+    /having trouble (with|at)/,
+    /difficult (situation|time|relationship)/,
+    /problem (with|at) (work|school|home|relationship)/,
+    /conflict (with|at)/,
+    /struggling (with|at)/,
+    /advice (for|about)/,
+    /how to handle/,
+    /dealing with/,
+    /going through/,
+    /facing (challenges|problems)/,
+    /need guidance/
+  ];
+
+  if (situationalPatterns.some(pattern => pattern.test(lowerMessage))) {
+    return 'situational_help';
   }
 
   // Help/guidance seeking patterns
