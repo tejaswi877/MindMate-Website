@@ -8,7 +8,62 @@ export const analyzeEmotion = (message: string): string => {
     return 'crisis';
   }
 
-  // Website/feature questions - expanded patterns
+  // Specific feature questions - new category
+  const featurePatterns = [
+    // Chat feature
+    /how (does|do) (chat|chatbot|ai chat|mindmate chat) work/,
+    /tell me about (chat|chatbot|ai chat)/,
+    /what is (chat|chatbot|ai chat)/,
+    /explain (chat|chatbot|ai chat)/,
+    
+    // Mood tracking
+    /how (does|do) mood (tracking|tracker) work/,
+    /tell me about mood (tracking|tracker)/,
+    /what is mood (tracking|tracker)/,
+    /explain mood (tracking|tracker)/,
+    
+    // Journal feature
+    /how (does|do) (journal|journaling) work/,
+    /tell me about (journal|journaling)/,
+    /what is (journal|journaling)/,
+    /explain (journal|journaling)/,
+    
+    // Breathing games
+    /how (does|do) breathing (games|exercises) work/,
+    /tell me about breathing (games|exercises)/,
+    /what is breathing (games|exercises)/,
+    /explain breathing (games|exercises)/,
+    
+    // Badges/achievements
+    /how (does|do) (badges|achievements) work/,
+    /tell me about (badges|achievements)/,
+    /what (are|is) (badges|achievements)/,
+    /explain (badges|achievements)/,
+    
+    // Reminders
+    /how (does|do) reminders work/,
+    /tell me about reminders/,
+    /what (are|is) reminders/,
+    /explain reminders/,
+    
+    // Progress tracking
+    /how (does|do) progress (tracking|analytics) work/,
+    /tell me about progress (tracking|analytics)/,
+    /what is progress (tracking|analytics)/,
+    /explain progress (tracking|analytics)/,
+    
+    // Crisis support
+    /how (does|do) crisis support work/,
+    /tell me about crisis support/,
+    /what is crisis support/,
+    /explain crisis support/
+  ];
+  
+  if (featurePatterns.some(pattern => pattern.test(lowerMessage))) {
+    return 'specific_feature';
+  }
+
+  // Website/general features questions - expanded patterns
   const websitePatterns = [
     /what is (this|mindmate)/,
     /how (does|do) (this|it|mindmate) work/,
@@ -20,17 +75,18 @@ export const analyzeEmotion = (message: string): string => {
     /what services/,
     /mindmate features/,
     /app features/,
-    /how does (chat|mood|journal|breathing|badges) work/,
     /explain (mindmate|features)/,
     /what is available/,
-    /show me features/
+    /show me features/,
+    /list features/,
+    /all features/
   ];
   
   if (websitePatterns.some(pattern => pattern.test(lowerMessage))) {
     return 'website_help';
   }
 
-  // Coping strategies requests - new category
+  // Coping strategies requests
   const copingPatterns = [
     /how to (reduce|manage|cope with|deal with|handle) (stress|anxiety|depression|anger|sadness|worry)/,
     /coping (strategies|techniques|methods|skills)/,
@@ -52,7 +108,7 @@ export const analyzeEmotion = (message: string): string => {
     return 'coping_strategies';
   }
 
-  // Situational questions - new category
+  // Situational questions
   const situationalPatterns = [
     /(what should i do|help me) (when|if)/,
     /having trouble (with|at)/,
@@ -88,7 +144,7 @@ export const analyzeEmotion = (message: string): string => {
     return 'seeking_help';
   }
 
-  // Negative emotion patterns - improved detection
+  // Negative emotion patterns
   const negativePatterns = [
     /not feeling (good|well|okay|fine)/,
     /feeling (bad|terrible|awful|horrible|sad|down|low|depressed)/,
