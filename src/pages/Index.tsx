@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -13,56 +12,82 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Clear any existing session and force logout
-    const resetAndStartFresh = async () => {
-      // Get current user before signing out
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (currentUser) {
-        // Clear all chat data for the user
-        await supabase
-          .from("chat_messages")
-          .delete()
-          .eq("user_id", currentUser.id);
+    // Initialize authentication state
+    const initializeAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          setUser(null);
+        } else if (session?.user) {
+          // Refresh user profile from database
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
           
-        await supabase
-          .from("chat_sessions")
-          .delete()
-          .eq("user_id", currentUser.id);
+          // Update user metadata with fresh profile data
+          if (profile) {
+            const updatedUser = {
+              ...session.user,
+              user_metadata: {
+                ...session.user.user_metadata,
+                username: profile.username
+              }
+            };
+            setUser(updatedUser);
+          } else {
+            setUser(session.user);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      
-      // Sign out any existing user
-      await supabase.auth.signOut();
-      
-      // Clear local storage
-      localStorage.clear();
-      
-      // Clear session storage
-      sessionStorage.clear();
-      
-      setUser(null);
-      setLoading(false);
-      
-      toast({
-        title: "Welcome to MindMate! 🌟",
-        description: "Please sign up or log in to start your mental wellness journey.",
-      });
     };
 
-    resetAndStartFresh();
+    initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes with proper user refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: string, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
-        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Refresh user profile from database on auth change
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          const updatedUser = profile ? {
+            ...session.user,
+            user_metadata: {
+              ...session.user.user_metadata,
+              username: profile.username
+            }
+          } : session.user;
+          
+          setUser(updatedUser);
+        } else {
+          setUser(null);
+        }
+        
         setLoading(false);
         
         if (event === 'SIGNED_IN') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
-            title: `Welcome to MindMate, ${username}! 🎉`,
-            description: "Start your mental wellness journey today.",
+            title: `Welcome back, ${username}! 🎉`,
+            description: "Great to see you again. How are you feeling today?",
           });
         }
         
@@ -70,14 +95,17 @@ const Index = () => {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome to MindMate, ${username}! 🌟`,
-            description: "Your account has been created successfully. Begin your journey to better mental health!",
+            description: "Your mental wellness journey starts now. I'm here to support you every step of the way.",
           });
         }
         
         if (event === 'SIGNED_OUT') {
+          // Clear all local data on sign out
+          localStorage.clear();
+          sessionStorage.clear();
           toast({
-            title: "See you soon! 👋",
-            description: "You've been signed out. Remember, we're here whenever you need support.",
+            title: "Take care! 💙",
+            description: "Remember, I'm always here when you need someone to talk to.",
           });
         }
       }
@@ -91,14 +119,14 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Starting Fresh...</h2>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading MindMate...</h2>
           <p className="text-gray-500">Preparing your mental wellness companion</p>
         </div>
       </div>
     );
   }
 
-  // Show the full Dashboard when user is logged in
+  // Show Dashboard when user is authenticated
   if (user) {
     return (
       <>
@@ -108,6 +136,7 @@ const Index = () => {
     );
   }
 
+  // Show authentication page for non-authenticated users
   return (
     <div className="min-h-screen">
       <AuthPage />
@@ -117,4 +146,3 @@ const Index = () => {
 };
 
 export default Index;
-
