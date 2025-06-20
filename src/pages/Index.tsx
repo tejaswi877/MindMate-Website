@@ -12,6 +12,10 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Clear any cached data for fresh start
+    localStorage.clear();
+    sessionStorage.clear();
+    
     // Initialize authentication state
     const initializeAuth = async () => {
       try {
@@ -27,7 +31,7 @@ const Index = () => {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
           // Update user metadata with fresh profile data
           if (profile) {
@@ -66,7 +70,7 @@ const Index = () => {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
           const updatedUser = profile ? {
             ...session.user,
@@ -87,7 +91,7 @@ const Index = () => {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome back, ${username}! 🎉`,
-            description: "Great to see you again. How are you feeling today?",
+            description: "Great to see you again. Ready to continue your wellness journey?",
           });
         }
         
@@ -119,7 +123,7 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading MindMate...</h2>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Starting Fresh...</h2>
           <p className="text-gray-500">Preparing your mental wellness companion</p>
         </div>
       </div>

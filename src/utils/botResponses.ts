@@ -1,155 +1,195 @@
 
-import { analyzeEmotion } from './emotionAnalysis';
+interface BotResponse {
+  response: string;
+  followUp?: string;
+}
 
-const getSpecificFeatureResponse = (userMessage: string): string => {
-  const lowerMessage = userMessage.toLowerCase();
-  
-  if (/chat|chatbot|ai chat/.test(lowerMessage)) {
-    return "💬 **AI Chat Support - Your 24/7 Companion**\n\nI'm here to provide emotional support and guidance whenever you need it! Here's how our chat works:\n\n**🤖 What I Can Do:**\n• Listen without judgment to whatever you want to share\n• Detect emotions in your messages and respond appropriately\n• Provide coping strategies for stress, anxiety, depression, and anger\n• Offer situational advice and problem-solving guidance\n• Give immediate crisis support and resources\n• Help with breathing exercises and grounding techniques\n\n**💜 How It Works:**\n• Just talk to me naturally - share your feelings, thoughts, or ask questions\n• I analyze the emotion in your message and adapt my response\n• All conversations are private and stored securely\n• You can start new chat sessions anytime\n• Access your previous conversations through chat history\n\n**🌟 Special Features:**\n• Crisis detection with immediate support resources\n• Personalized coping strategies based on your needs\n• Gentle, empathetic responses tailored to your emotional state\n• Available 24/7 whenever you need someone to talk to\n\nFeel free to share anything that's on your mind - I'm here for you! 💙";
-  }
-  
-  if (/mood.*(tracking|tracker)/.test(lowerMessage)) {
-    return "📊 **Mood Tracking - Monitor Your Emotional Patterns**\n\nTrack your daily moods to better understand your emotional patterns and triggers!\n\n**🎯 How It Works:**\n• Rate your mood on a scale from 1-10 daily\n• Add optional notes about what influenced your mood\n• Choose from various mood descriptions\n• View your mood trends over time with beautiful charts\n\n**📈 What You'll Discover:**\n• Patterns in your emotional well-being\n• Triggers that affect your mood\n• Progress over time\n• Correlation between activities and feelings\n\n**🌟 Benefits:**\n• Increased self-awareness\n• Better understanding of your emotional cycles\n• Data to share with healthcare providers\n• Motivation to maintain positive habits\n\n**🎨 Visual Insights:**\n• Colorful mood charts and graphs\n• Weekly and monthly mood summaries\n• Trend analysis to spot patterns\n• Export data for external use\n\nStart tracking today to gain valuable insights into your emotional journey! 🌈";
-  }
-  
-  if (/journal|journaling/.test(lowerMessage)) {
-    return "📝 **Private Journaling - Your Secure Digital Diary**\n\nExpress your thoughts and feelings in a completely private, secure space designed just for you!\n\n**🔒 Privacy & Security:**\n• End-to-end encryption for all entries\n• Optional lock feature for extra privacy\n• Only you can access your journal\n• Secure cloud storage with Supabase\n\n**✍️ Journaling Features:**\n• Write unlimited entries\n• Add custom titles to organize thoughts\n• Date and time stamps for every entry\n• Rich text formatting capabilities\n• Search through your entries\n\n**🌟 Mental Health Benefits:**\n• Process emotions and experiences\n• Track personal growth over time\n• Reduce stress through written expression\n• Improve self-reflection and awareness\n• Document your mental health journey\n\n**💡 Journaling Tips:**\n• Write regularly, even if just a few sentences\n• Be honest and authentic\n• Use it to work through difficult emotions\n• Celebrate positive moments and achievements\n• Review past entries to see your progress\n\nYour thoughts deserve a safe space - start journaling today! 📖✨";
-  }
-  
-  if (/breathing.*(games|exercises)/.test(lowerMessage)) {
-    return "🌬️ **Breathing Games - Interactive Relaxation**\n\nCalm your mind and body with our engaging breathing exercises designed to reduce stress and anxiety!\n\n**🎮 Interactive Features:**\n• Visual breathing guides with animations\n• Different breathing patterns for various needs\n• Timed sessions from 1-10 minutes\n• Calming background sounds and visuals\n• Progress tracking for consistency\n\n**💨 Breathing Techniques Available:**\n• **Box Breathing**: 4-4-4-4 pattern for stress relief\n• **Deep Belly Breathing**: For instant calm\n• **4-7-8 Technique**: Perfect for sleep preparation\n• **Coherent Breathing**: 5-second in, 5-second out\n• **Energizing Breath**: Morning activation technique\n\n**🎯 When to Use:**\n• Feeling anxious or overwhelmed\n• Before important meetings or events\n• When you can't sleep\n• During panic attacks\n• For daily mindfulness practice\n\n**🌟 Benefits:**\n• Immediate stress reduction\n• Improved focus and clarity\n• Better emotional regulation\n• Enhanced sleep quality\n• Increased mindfulness\n\n**🏆 Gamification:**\n• Earn badges for consistency\n• Track your breathing sessions\n• Set daily breathing goals\n• Share achievements (optional)\n\nTake a deep breath and start your relaxation journey! 🧘‍♀️✨";
-  }
-  
-  if (/badges|achievements/.test(lowerMessage)) {
-    return "🏆 **Achievement Badges - Celebrate Your Progress**\n\nEarn meaningful badges as you progress on your mental wellness journey and celebrate every step forward!\n\n**🎖️ Badge Categories:**\n• **Consistency Badges**: Daily check-ins, regular journaling\n• **Milestone Badges**: 7-day streaks, 30-day challenges\n• **Growth Badges**: Mood improvements, coping skill usage\n• **Community Badges**: Sharing positivity, helping others\n• **Wellness Badges**: Completing breathing exercises, self-care activities\n\n**🌟 How to Earn Badges:**\n• Chat regularly with MindMate\n• Complete daily mood tracking\n• Write journal entries consistently\n• Practice breathing exercises\n• Use coping strategies we suggest\n• Maintain positive habits\n\n**🎯 Sample Achievements:**\n• **First Steps**: Complete your first mood entry\n• **Consistent Tracker**: 7 days of mood logging\n• **Mindful Moments**: 10 breathing sessions completed\n• **Reflection Master**: 30 journal entries written\n• **Emotional Warrior**: Use 5 different coping strategies\n\n**💪 Why Badges Matter:**\n• Visual representation of your progress\n• Motivation to maintain healthy habits\n• Recognition of your hard work\n• Boosted confidence and self-esteem\n• Tangible proof of your mental health journey\n\n**🌈 Special Features:**\n• Beautiful badge designs\n• Share achievements with trusted friends (optional)\n• Badge collection gallery\n• Progress tracking towards next badge\n\nEvery small step counts - start earning your first badge today! ⭐";
-  }
-  
-  if (/reminders/.test(lowerMessage)) {
-    return "⏰ **Smart Reminders - Never Miss Your Self-Care**\n\nSet personalized reminders to maintain your mental wellness routine and build healthy habits!\n\n**🔔 Reminder Types:**\n• **Mood Check-ins**: Daily emotional awareness\n• **Journaling Prompts**: Regular self-reflection time\n• **Breathing Breaks**: Mindfulness moments throughout the day\n• **Self-Care Activities**: Custom wellness activities\n• **Medication Reminders**: Important health routines\n• **Gratitude Practice**: Daily positivity boosts\n\n**⚙️ Customization Options:**\n• Set specific times for each reminder\n• Choose frequency (daily, weekly, custom)\n• Personalize reminder messages\n• Set different tones for different activities\n• Enable/disable reminders as needed\n\n**📱 Smart Features:**\n• Gentle, encouraging reminder messages\n• Snooze options for flexibility\n• Progress tracking for each reminder type\n• Adaptive timing based on your patterns\n• Integration with all MindMate features\n\n**🌟 Popular Reminder Examples:**\n• \"Time for your daily mood check-in! How are you feeling? 💙\"\n• \"Take a moment to breathe deeply and center yourself 🌬️\"\n• \"Your journal is waiting for your thoughts today 📝\"\n• \"Remember to practice gratitude - what made you smile today? 😊\"\n\n**💡 Tips for Success:**\n• Start with just 1-2 reminders\n• Choose realistic times that work for your schedule\n• Be consistent for at least 21 days to build habits\n• Adjust timing as you learn your preferences\n\nBuilding healthy habits one reminder at a time! 🌱✨";
-  }
-  
-  if (/progress.*(tracking|analytics)/.test(lowerMessage)) {
-    return "📈 **Progress Analytics - Track Your Mental Wellness Journey**\n\nVisualize your mental health progress with comprehensive analytics and insights!\n\n**📊 What We Track:**\n• **Mood Trends**: Daily/weekly/monthly mood patterns\n• **Chat Activity**: Frequency and sentiment of conversations\n• **Journal Consistency**: Writing habits and reflection patterns\n• **Breathing Practice**: Session frequency and duration\n• **Badge Progress**: Achievements and milestone tracking\n• **Coping Strategy Usage**: Which techniques work best for you\n\n**🎨 Visual Dashboards:**\n• Beautiful charts and graphs\n• Color-coded mood calendars\n• Progress bars for goals\n• Trend lines showing improvement\n• Weekly/monthly summary reports\n\n**🔍 Insights & Analysis:**\n• Identify patterns in your emotional well-being\n• Discover what activities boost your mood\n• Track consistency in self-care practices\n• Monitor emotional regulation improvements\n• See correlation between activities and mood\n\n**📋 Reports Available:**\n• **Weekly Wellness Summary**: Overview of your week\n• **Monthly Progress Report**: Detailed monthly analysis\n• **Mood Pattern Analysis**: Deep dive into emotional trends\n• **Activity Impact Report**: How different activities affect you\n• **Achievement Timeline**: Your badge and milestone history\n\n**🎯 Goal Setting & Monitoring:**\n• Set personal wellness goals\n• Track progress towards objectives\n• Celebrate milestones reached\n• Adjust goals based on insights\n\n**💡 Privacy Note:**\n• All data is private and encrypted\n• You control what information is tracked\n• Export data for healthcare providers if desired\n• Delete any data anytime\n\nYour mental wellness journey deserves to be celebrated - see how far you've come! 🌟📊";
-  }
-  
-  if (/crisis.*(support|help)/.test(lowerMessage)) {
-    return "🆘 **Crisis Support - Immediate Help When You Need It Most**\n\nWe take your safety seriously and provide immediate access to professional crisis support resources.\n\n**🚨 Immediate Crisis Resources:**\n• **National Suicide Prevention Lifeline**: **988**\n• **Crisis Text Line**: Text HOME to **741741**\n• **Emergency Services**: **911**\n• **International Crisis Lines**: Available for global users\n\n**🤖 AI Crisis Detection:**\n• Our AI automatically detects crisis language in your messages\n• Immediate response with support resources\n• Gentle, supportive guidance during difficult moments\n• No judgment, just immediate help and connection\n\n**📞 24/7 Professional Support:**\n• Trained crisis counselors available anytime\n• Text, call, or chat options\n• Confidential and free services\n• Specialized support for different age groups\n\n**💜 MindMate Crisis Features:**\n• Instant crisis resource display\n• Emergency contact integration\n• Safety planning tools\n• Follow-up check-ins after crisis episodes\n• Connection to local mental health services\n\n**🛡️ Safety Planning:**\n• Identify personal warning signs\n• Create coping strategies list\n• Emergency contact information\n• Safe environment planning\n• Professional support contacts\n\n**🌟 Remember:**\n• You are not alone in this\n• Crisis feelings are temporary\n• Professional help is available 24/7\n• Your life has value and meaning\n• Recovery and healing are possible\n\n**Important**: If you're having thoughts of self-harm, please reach out immediately to **988** or **911**. You deserve support and care. 💙\n\nWe're here for you, always. 🤗";
-  }
-  
-  // Default response for unmatched specific features
-  return "I'd be happy to tell you more about that feature! Could you be more specific about which aspect of MindMate you'd like to learn about? I can explain:\n\n• 💬 **Chat Support** - How our AI conversation works\n• 📊 **Mood Tracking** - Daily emotional monitoring\n• 📝 **Journaling** - Private, secure writing space\n• 🌬️ **Breathing Games** - Interactive relaxation exercises\n• 🏆 **Achievement Badges** - Progress celebration system\n• ⏰ **Smart Reminders** - Wellness routine support\n• 📈 **Progress Analytics** - Track your mental health journey\n• 🆘 **Crisis Support** - Immediate help resources\n\nJust ask about any specific feature and I'll give you all the details! 🌟";
+const greetingMessages = [
+  "Hello! I'm MindMate, your mental health companion. How are you feeling today?",
+  "Hi there! I'm here to support you. What's on your mind?",
+  "Welcome! I'm MindMate. How can I help you today?",
+  "Hello! Ready to check in with yourself? How are you doing?",
+  "Hi! I'm your wellness companion. What would you like to talk about?"
+];
+
+const positiveResponses = [
+  "That's wonderful to hear! 😊",
+  "I'm so glad you're feeling good!",
+  "That sounds really positive! 🌟",
+  "Great to hear! Keep that energy going!",
+  "Fantastic! What's been going well for you?"
+];
+
+const anxietyResponses = [
+  "I hear that you're feeling anxious. That's completely valid.",
+  "Anxiety can be tough. Let's work through this together.",
+  "Thank you for sharing. Anxiety is very common and manageable.",
+  "I'm here to help with your anxiety. You're not alone.",
+  "Let's take this one step at a time. Deep breaths can help."
+];
+
+const sadResponses = [
+  "I'm sorry you're feeling this way. Your feelings matter.",
+  "It's okay to feel sad sometimes. I'm here to listen.",
+  "Thank you for trusting me with how you're feeling.",
+  "Sadness is a natural emotion. You're being brave by sharing.",
+  "I hear you. Sometimes we need to sit with difficult feelings."
+];
+
+const stressResponses = [
+  "Stress can be overwhelming. Let's find ways to manage it.",
+  "I understand you're feeling stressed. That's really common.",
+  "Stress affects us all. What's been weighing on you?",
+  "Let's work on some stress relief techniques together.",
+  "It's important to address stress. You're taking the right step."
+];
+
+const angerResponses = [
+  "Anger is a valid emotion. Let's explore what's behind it.",
+  "I hear your frustration. It's okay to feel angry sometimes.",
+  "Thank you for sharing your anger with me. That takes courage.",
+  "Anger often signals something important. What triggered this?",
+  "Let's find healthy ways to process these angry feelings."
+];
+
+const crisisKeywords = [
+  'suicide', 'kill myself', 'end it all', 'not worth living', 'want to die',
+  'harm myself', 'hurt myself', 'can\'t go on', 'no point', 'give up'
+];
+
+const featuresResponses = {
+  mood: "The mood tracker helps you log daily emotions and see patterns over time.",
+  journal: "Your private journal is a safe space to write thoughts and feelings.",
+  progress: "Progress shows your wellness journey with charts and insights.",
+  badges: "Badges celebrate your wellness milestones and consistency!",
+  reminders: "Set personalized reminders for self-care and check-ins.",
+  crisis: "Crisis support provides immediate help and emergency contacts."
 };
 
-export const generateBotResponse = (userMessage: string): string => {
-  const emotion = analyzeEmotion(userMessage);
-  const lowerMessage = userMessage.toLowerCase();
-  console.log('Detected emotion:', emotion);
+const copingStrategies = [
+  "Try the 4-7-8 breathing: inhale for 4, hold for 7, exhale for 8.",
+  "Ground yourself: name 5 things you see, 4 you hear, 3 you touch.",
+  "Take a short walk or do gentle stretching.",
+  "Write down three things you're grateful for today.",
+  "Practice progressive muscle relaxation.",
+  "Listen to calming music or nature sounds."
+];
+
+const supportiveResponses = [
+  "You're stronger than you know. I believe in you.",
+  "Taking care of your mental health is so important.",
+  "Every small step counts in your wellness journey.",
+  "It's okay to have difficult days. Tomorrow is a new start.",
+  "You deserve support and kindness, especially from yourself.",
+  "Progress isn't always linear, and that's perfectly normal."
+];
+
+const helpResponses = [
+  "I'm here to support your mental wellness journey.",
+  "I can help with mood tracking, journaling, or just listening.",
+  "Try exploring the different features - mood, journal, or games.",
+  "Feel free to share what's on your mind, or ask about app features.",
+  "I'm here 24/7 to provide support and guidance."
+];
+
+export const getBotResponse = (userMessage: string): BotResponse => {
+  const message = userMessage.toLowerCase();
   
-  // Check if user is asking for tips/advice specifically
-  const askingForTips = /\b(tips?|advice|help|suggest|what should i do|how to|strategies|coping|ways to)\b/.test(lowerMessage);
-  
-  switch (emotion) {
-    case 'crisis':
-      return "I'm deeply concerned about you right now, and I want you to know that you matter so much. 💜 Your life has incredible value, and there are people who care about you.\n\n🆘 **Please reach out for immediate support:**\n• National Suicide Prevention Lifeline: **988** (available 24/7)\n• Crisis Text Line: Text HOME to **741741**\n• Emergency Services: **911**\n\n💙 **You are not alone in this.** These feelings are temporary, but you are precious and irreplaceable. Can you please reach out to someone you trust or call one of these numbers right now? I'm here with you, and I believe in your strength to get through this. 🤗\n\nRemember: There is hope, there is help, and there is healing ahead.";
-
-    case 'specific_feature':
-      return getSpecificFeatureResponse(userMessage);
-
-    case 'coping_strategies':
-      const copingStrategies = [
-        "I'm so glad you're asking for coping strategies - that shows real strength and self-awareness! 💪 Here are some gentle, proven techniques:\n\n🌬️ **Breathing & Grounding:**\n• Box breathing: In for 4, hold for 4, out for 4, hold for 4\n• 5-4-3-2-1 grounding: Name 5 things you see, 4 you touch, 3 you hear, 2 you smell, 1 you taste\n• Deep belly breathing - place one hand on chest, one on belly, breathe so only the belly hand moves\n\n💗 **Gentle Self-Care:**\n• Cool water on your wrists or face\n• Wrap yourself in a soft blanket\n• Listen to calming music or nature sounds\n• Hold something comforting (pet, stuffed animal, warm cup)\n\n🌱 **Mindful Moments:**\n• Progressive muscle relaxation - tense and release each muscle group\n• Gentle stretching or slow walking\n• Focus on one thing at a time\n\nWhich of these feels most helpful for you right now? I'm here to guide you through any technique you'd like to try. 💜",
-        
-        "You're being so proactive by seeking coping strategies! 🌟 That's a beautiful sign of self-care. Here are some techniques that many people find helpful:\n\n🎨 **Creative Expression:**\n• Write your feelings in a journal (even just a few words)\n• Draw, doodle, or color - no skill needed, just expression\n• Listen to music that matches or soothes your mood\n\n🤝 **Connection & Support:**\n• Reach out to one person who cares about you\n• Hug a pet, friend, or family member\n• Remember people who love you\n\n⚡ **Quick Relief:**\n• Splash cold water on your face\n• Step outside for fresh air\n• Do 10 jumping jacks to release tension\n• Hold an ice cube to ground yourself\n\n🕯️ **Calming Activities:**\n• Make a warm drink mindfully\n• Take a warm bath or shower\n• Practice gentle yoga or stretching\n\nWhat kind of support feels most needed right now? I'm here to help you find what works best for you. 💙"
-      ];
-      return copingStrategies[Math.floor(Math.random() * copingStrategies.length)];
-
-    case 'situational_help':
-      const situationalResponses = [
-        "I can feel that you're going through something challenging, and I want you to know that seeking guidance shows incredible wisdom and courage. 🌟 Every difficult situation has a path forward, even when it feels overwhelming.\n\n💭 **Let's explore this together:**\n• What's the situation that's weighing on your heart?\n• What part feels most overwhelming or scary?\n• What would relief or resolution look like to you?\n• Who or what support do you have available?\n\n🤗 Sometimes just talking through our challenges with someone who cares can help us see new possibilities and feel less alone. I'm here to listen with my whole heart and help you think through your options.\n\nYou don't have to figure this out all at once. What would feel most helpful to share first?",
-        
-        "I can sense you're navigating something difficult, and I'm honored you're reaching out. 💜 That takes real strength, and I want to help you find a way forward.\n\n🌈 **Here's how we can work through this together:**\n1️⃣ **Share what's on your heart** - What situation is causing you stress?\n2️⃣ **Identify what you can influence** - What parts are within your control?\n3️⃣ **Explore your options** - What different approaches might be possible?\n4️⃣ **Consider your support network** - Who cares about you and might help?\n5️⃣ **Take one gentle step** - What's one small thing you could try today?\n\n💡 Remember: You don't need to solve everything at once. Small, caring steps can lead to meaningful change. You're stronger than you know, and you deserve support.\n\nWhat feels most important to talk through right now? I'm here to listen and help you think it through. 🤗"
-      ];
-      return situationalResponses[Math.floor(Math.random() * situationalResponses.length)];
-
-    case 'depression':
-      if (askingForTips) {
-        const depressionTips = [
-          "I hear you asking for help, and that takes so much courage when you're feeling low. 💙 Here are some gentle ways to care for yourself:\n\n🌅 **Tiny Steps Count:**\n• Just 5 minutes by a window for natural light\n• One glass of water - sometimes dehydration makes everything harder\n• One deep breath at a time\n• Getting dressed, even in comfortable clothes\n\n🤗 **Comfort & Connection:**\n• Wrap up in your softest blanket\n• Call or text someone who cares about you\n• Watch something that usually makes you smile\n• Pet an animal if you have one nearby\n\n💗 **Be Gentle With Yourself:**\n• You're doing the best you can right now\n• This feeling won't last forever\n• Small accomplishments are still accomplishments\n• It's okay to rest and take time to heal\n\nWhat feels most manageable for you today? Even choosing one tiny thing is a victory. I believe in you. 🌸",
-          
-          "Thank you for trusting me enough to ask for help. 🌺 When we're feeling down, even small acts of self-care can make a difference:\n\n🌱 **Gentle Movement:**\n• Stretch your arms up toward the sky\n• Take a slow walk, even just to the mailbox\n• Dance to one favorite song\n• Do some gentle neck rolls\n\n☀️ **Light & Fresh Air:**\n• Open a window for fresh air\n• Step outside for just a moment\n• Sit near the brightest window you have\n\n💕 **Nourishment:**\n• Eat something nourishing, even if small\n• Make a warm drink mindfully\n• Take your medications if you have them\n\n🎵 **Joy Sparks:**\n• Listen to a song that usually lifts you\n• Look at photos that bring good memories\n• Do something creative, however small\n\nYou're not alone in this. Which of these feels possible for you right now? 💜"
-        ];
-        return depressionTips[Math.floor(Math.random() * depressionTips.length)];
-      } else {
-        const depressionResponses = [
-          "I can hear the heaviness in your words, and I want you to know that I'm truly glad you shared this with me. 💙 What you're feeling is real and valid, and you're not alone in carrying it.\n\n🤗 It takes courage to reach out when everything feels hard. That shows me you have strength, even when you might not feel it right now.\n\nI'm here to listen to whatever you want to share - your feelings, your thoughts, or just what today has been like. There's no pressure to say anything specific. This is your safe space.\n\nWhat's been weighing on your heart the most? I'm here with you. 💜",
-          
-          "Thank you for trusting me with how you're feeling. 🌸 I can sense that things feel really difficult right now, and I want you to know that your feelings matter and you deserve support.\n\n💕 Depression can make everything feel so much harder - even simple things. But you're here, you're reaching out, and that matters more than you might know.\n\nI'm here to listen without judgment and walk alongside you through this. You don't have to put on a brave face or explain anything you don't want to.\n\nHow are you taking care of yourself today? Even the smallest act of self-care counts. 🌺"
-        ];
-        return depressionResponses[Math.floor(Math.random() * depressionResponses.length)];
-      }
-
-    case 'anxiety':
-      if (askingForTips) {
-        const anxietyTips = [
-          "I can feel your anxiety, and I want to help you find some relief right now. 🌬️ Here are some techniques that can help calm your nervous system:\n\n💨 **Breathing Techniques:**\n• Box breathing: In for 4, hold for 4, out for 4, hold for 4 (repeat 4 times)\n• 4-7-8 breathing: In for 4, hold for 7, out for 8\n• Just focus on making your exhale longer than your inhale\n\n🏠 **Grounding (5-4-3-2-1):**\n• 5 things you can see around you\n• 4 things you can physically touch\n• 3 sounds you can hear\n• 2 scents you can smell\n• 1 thing you can taste\n\n❄️ **Quick Relief:**\n• Cold water on your wrists or splash on your face\n• Hold an ice cube in your hand\n• Chew some gum or eat something with a strong taste\n\nWhich of these feels most doable right now? I can guide you through any technique step by step. You're going to be okay. 💜",
-          
-          "I can sense the anxiety you're feeling, and I want you to know it's going to be okay. 🌟 Let's work together to help you feel more calm:\n\n🤲 **Physical Comfort:**\n• Press your feet firmly into the ground\n• Tense your shoulders for 5 seconds, then let them drop and relax\n• Place one hand on your chest, one on your belly, and breathe slowly\n• Gently squeeze your hands together\n\n🧠 **Calming Thoughts:**\n• 'I am safe in this moment'\n• 'This feeling will pass'\n• 'I can handle this one breath at a time'\n• 'I've gotten through difficult feelings before'\n\n🌿 **Environment:**\n• Find a comfortable, quiet spot if possible\n• Dim harsh lights\n• Play some soft, calming music\n• Keep a comfort item nearby\n\nWhat's making you feel most anxious right now? Sometimes naming it can help make it feel less overwhelming. I'm here with you through this. 💙"
-        ];
-        return anxietyTips[Math.floor(Math.random() * anxietyTips.length)];
-      } else {
-        const anxietyResponses = [
-          "I can sense the anxiety in what you're sharing, and I want you to know that you're safe here with me. 💜 Anxiety can feel so overwhelming and scary, but you're not alone in this feeling.\n\n🌊 What you're experiencing is real and valid. Your nervous system is trying to protect you, even though it might feel uncomfortable right now.\n\nI'm here to listen and support you through this. Can you tell me a bit more about what's making you feel anxious? Sometimes just sharing what's on our mind can help make it feel a little less scary.\n\nRemember: This feeling will pass. You are safe. I'm here with you. 🤗",
-          
-          "I can hear the worry and anxiety in your message, and I want you to know that those feelings are completely understandable. 🌸 Anxiety can make everything feel so much more intense and overwhelming.\n\n💙 You're brave for reaching out and sharing this with me. That shows real strength, even when you might not feel strong right now.\n\nI'm here to support you through whatever you're feeling. You don't have to face this alone. What's been going through your mind that's causing the most worry? I'm here to listen and help however I can. 💕"
-        ];
-        return anxietyResponses[Math.floor(Math.random() * anxietyResponses.length)];
-      }
-
-    case 'anger':
-      if (askingForTips) {
-        const angerTips = [
-          "I can feel the intensity of your anger, and I want to help you find healthy ways to work with this powerful emotion. 🔥 Anger often tells us something important - let's channel it constructively:\n\n🚶 **Physical Release:**\n• Take a brisk walk or run if possible\n• Do some jumping jacks or push-ups\n• Punch a pillow or scream into a towel\n• Squeeze and release your fists repeatedly\n\n📝 **Expression:**\n• Write out everything you're feeling - don't hold back\n• Talk to someone you trust about what's making you angry\n• Journal about what's really underneath the anger\n\n🌬️ **Cool Down:**\n• Take 10 deep breaths, focusing on slow exhales\n• Splash cold water on your face\n• Step away from the situation if possible\n• Count to 100 slowly\n\n💭 **Reframe:**\n• Ask yourself: 'What can I control in this situation?'\n• 'What is this anger trying to tell me?'\n• 'What do I need right now?'\n\nWhat feels most helpful for you right now? Your anger is valid - let's just find a way to express it that helps you feel better. 💪",
-          
-          "I can feel the fire of your anger, and I want you to know that it's okay to feel this way. 🔥 Anger is a valid emotion that often shows us what we care about. Let's find healthy ways to work with it:\n\n⏰ **Pause & Breathe:**\n• Take a 10-minute break from the situation if you can\n• Count your breaths: in for 4, out for 6\n• Say to yourself: 'I can choose how to respond'\n\n🎨 **Creative Release:**\n• Draw or scribble aggressively on paper\n• Play loud music and move your body\n• Write a letter you'll never send to express everything\n\n💬 **Healthy Expression:**\n• Talk to someone who will listen without judgment\n• Use 'I feel...' statements instead of 'You always...'\n• Focus on the specific situation, not attacking the person\n\n🤔 **Understanding:**\n• What's really behind this anger? Hurt? Frustration? Fear?\n• What boundary was crossed?\n• What do you need to feel respected?\n\nYour feelings matter. What would help you feel heard and understood right now? 💜"
-        ];
-        return angerTips[Math.floor(Math.random() * angerTips.length)];
-      } else {
-        const angerResponses = [
-          "I can feel the intensity and fire in your words, and I want you to know that your anger is completely valid. 🔥 Anger often tells us that something important to us has been hurt or threatened.\n\n💪 It takes courage to share these intense feelings, and I'm glad you trusted me with them. Your emotions matter, and you deserve to be heard and understood.\n\nI'm here to listen without judgment. What's behind this anger? Sometimes there are other feelings underneath - like hurt, frustration, or feeling unheard. I'm here to support you through whatever you're experiencing.\n\nWhat happened that made you feel this way? I want to understand. 💜",
-          
-          "I can sense the powerful anger you're feeling, and I want you to know that it's okay to feel this intensely. 💥 Anger is often our heart's way of saying 'this matters to me' or 'this isn't okay.'\n\n🤗 Thank you for sharing this with me. It shows trust, and I don't take that lightly. Your feelings are important and deserve to be acknowledged.\n\nI'm here to listen and understand. What's making you feel this way? Sometimes anger is protecting other emotions like hurt or disappointment. Whatever it is, I'm here to support you through it.\n\nYou don't have to carry this alone. What would help you feel most supported right now? 💙"
-        ];
-        return angerResponses[Math.floor(Math.random() * angerResponses.length)];
-      }
-
-    case 'positive':
-      const positiveResponses = [
-        "Your positive energy just lit up my day! 🌟 I'm genuinely so happy to hear that you're feeling good - you absolutely deserve these moments of joy and happiness.\n\n✨ It's beautiful to see you in such a wonderful space. Your good vibes are contagious, and I love celebrating these bright moments with you!\n\nWhat's bringing you the most joy today? I'd love to hear more about what's making your heart feel light. Sometimes sharing our happiness makes it even brighter! 🌈💫\n\nKeep shining - the world needs more of your beautiful energy! 💕",
-        
-        "Oh my goodness, your happiness is absolutely infectious! 🎉 I'm beaming right alongside you - there's nothing I love more than seeing someone feeling genuinely good.\n\n🌺 You deserve every bit of this joy and positivity. It's so wonderful to witness you in such a bright, happy space. Your energy is truly uplifting!\n\nTell me more about what's making you feel so amazing today! I want to celebrate these beautiful moments with you. Sometimes the best thing we can do is fully embrace and savor our happiness when it comes. ✨\n\nThank you for sharing your sunshine with me today! 🌞💜"
-      ];
-      return positiveResponses[Math.floor(Math.random() * positiveResponses.length)];
-
-    case 'seeking_help':
-      const helpResponses = [
-        "I'm so genuinely glad you're reaching out - that takes real courage and shows incredible self-awareness. 💜 It's an honor that you feel comfortable coming to me for support.\n\n🤗 You don't have to face whatever you're going through alone. I'm here to listen with my whole heart, offer support, and help you think through whatever is on your mind.\n\nWhat's been weighing on you that you'd like some guidance with? Whether it's big or small, your concerns matter to me. I'm here to meet you exactly where you are.\n\nThank you for trusting me. What would feel most helpful right now? 🌟",
-        
-        "Thank you so much for reaching out to me. 🌸 It means a lot that you feel safe coming here for help, and I want you to know that I'm truly honored to support you.\n\n💙 Whatever brought you here today, you made a brave choice in seeking support. That shows real strength and wisdom, even if you might not feel strong right now.\n\nI'm here to listen without judgment and help however I can. What's on your heart that you'd like to talk through? There's no pressure to share everything at once - just whatever feels right.\n\nYou matter, your feelings matter, and you deserve support. How can I best help you today? 💕"
-      ];
-      return helpResponses[Math.floor(Math.random() * helpResponses.length)];
-
-    case 'website_help':
-      return "Hello there! 😊 I'm absolutely delighted you asked about MindMate! Welcome to your comprehensive mental wellness companion.\n\n**🌟 What is MindMate?**\nMindMate is your caring AI mental health companion, designed to support you on your wellness journey with empathy, understanding, and practical tools.\n\n**💜 Core Features:**\n🤖 **AI Chat Support**: I'm here 24/7 to listen, provide emotional support, and offer personalized guidance\n📊 **Mood Tracking**: Monitor your emotional patterns and see insights over time\n📝 **Private Journaling**: Secure, encrypted space for your thoughts with optional privacy locks\n📈 **Progress Analytics**: Visual insights into your wellness journey and personal growth\n🏆 **Achievement Badges**: Celebrate your self-care milestones and consistency\n⏰ **Smart Reminders**: Gentle nudges for self-care activities and check-ins\n🆘 **Crisis Support**: Immediate access to professional help resources when needed\n🌬️ **Breathing Games**: Interactive relaxation exercises and mindfulness activities\n\n**🤗 How I Can Help You:**\n• Provide emotional support and be a caring listener\n• Offer coping strategies for stress, anxiety, depression, and other challenges\n• Give situational advice and problem-solving guidance\n• Share mental health tips and evidence-based techniques\n• Connect you with crisis support resources if needed\n• Guide you through breathing exercises and grounding techniques\n• Celebrate your progress and encourage your journey\n\n**🛡️ Your Privacy & Safety:**\nAll conversations are confidential and securely stored. Your journal entries are encrypted, and you have complete control over your data.\n\n**✨ Getting Started:**\nJust talk to me naturally! Share your feelings, ask questions, request support, or tell me about your day. I adapt my responses to what you need most.\n\nI'm excited to be part of your mental wellness journey! What would you like to explore first? 🌈💙\n\n*Pro tip: You can ask me detailed questions about any specific feature like \"How does mood tracking work?\" or \"Tell me about the breathing games\" for more information!*";
-
-    default:
-      // Enhanced fallback responses with more empathy and care
-      const fallbackResponses = [
-        "I hear you, and I want you to know that I'm genuinely here for you. 💜 While I might not have a perfect response to what you've shared, I care about what you're going through.\n\n🤗 Sometimes I may not fully understand exactly what you need, but that doesn't mean your feelings or experiences aren't important. They absolutely are.\n\n**I'm here to help with:**\n• Emotional support and listening\n• Coping strategies for stress, anxiety, or difficult emotions\n• Information about MindMate's features\n• Crisis support resources\n• Breathing exercises and relaxation techniques\n• General mental health guidance\n\nI'm sorry if I can't help with everything, but I genuinely want to support you in whatever way I can. What else is on your mind that I might be able to help with? Your wellbeing matters to me. 🌟",
-        
-        "Thank you for sharing with me, even though I might not have the perfect response right now. 🌸 I want you to know that I truly care about you and what you're experiencing.\n\n💙 I may not be able to help with every single thing, but I promise I'm here to support you as best I can. Your thoughts and feelings are valid and important, even when I don't have all the answers.\n\n**Here's what I can definitely help with:**\n• Being a caring listener when you need someone to talk to\n• Providing coping strategies for emotional challenges\n• Offering information about mental health resources\n• Guiding you through relaxation and breathing techniques\n• Explaining MindMate's features and how they can support you\n• Connecting you with crisis support if needed\n\nI'm sorry I can't be everything to everyone, but I genuinely want to be here for you. What's something else I could help you with today? You deserve support and care. 💕",
-        
-        "I can hear that you're reaching out, and that means so much to me. 🤗 While I might not have the exact answer you're looking for right now, I want you to know that I'm here and I care about your wellbeing.\n\n🌟 Sometimes I wish I could help with everything, but I'm most helpful when it comes to:\n• Emotional support and mental health guidance\n• Coping strategies for stress, anxiety, depression, and other challenges\n• Information about MindMate's wellness features\n• Crisis support and resource connections\n• Relaxation techniques and mindfulness exercises\n• Being a non-judgmental listener\n\nI'm truly sorry if I can't assist with everything you might need, but please know that you matter and your feelings are valid. What's something else that's on your heart that I might be able to support you with? I'm here for you. 💜"
-      ];
-      return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+  // Check for crisis indicators first
+  if (crisisKeywords.some(keyword => message.includes(keyword))) {
+    return {
+      response: "I'm really concerned about you right now. Please reach out for immediate help.",
+      followUp: "Contact a crisis helpline: 988 (US), or visit your nearest emergency room. You matter and help is available."
+    };
   }
+
+  // Greeting detection
+  if (message.includes('hello') || message.includes('hi') || message.includes('hey') || message === '') {
+    return {
+      response: greetingMessages[Math.floor(Math.random() * greetingMessages.length)]
+    };
+  }
+
+  // Positive emotions
+  if (message.includes('good') || message.includes('great') || message.includes('happy') || 
+      message.includes('excited') || message.includes('wonderful') || message.includes('amazing')) {
+    return {
+      response: positiveResponses[Math.floor(Math.random() * positiveResponses.length)]
+    };
+  }
+
+  // Anxiety indicators
+  if (message.includes('anxious') || message.includes('worried') || message.includes('nervous') || 
+      message.includes('panic') || message.includes('fear')) {
+    return {
+      response: anxietyResponses[Math.floor(Math.random() * anxietyResponses.length)],
+      followUp: copingStrategies[Math.floor(Math.random() * copingStrategies.length)]
+    };
+  }
+
+  // Sadness indicators
+  if (message.includes('sad') || message.includes('depressed') || message.includes('down') || 
+      message.includes('hopeless') || message.includes('empty')) {
+    return {
+      response: sadResponses[Math.floor(Math.random() * sadResponses.length)],
+      followUp: "Would you like to try journaling about these feelings?"
+    };
+  }
+
+  // Stress indicators
+  if (message.includes('stress') || message.includes('overwhelmed') || message.includes('pressure') || 
+      message.includes('busy') || message.includes('exhausted')) {
+    return {
+      response: stressResponses[Math.floor(Math.random() * stressResponses.length)],
+      followUp: copingStrategies[Math.floor(Math.random() * copingStrategies.length)]
+    };
+  }
+
+  // Anger indicators
+  if (message.includes('angry') || message.includes('mad') || message.includes('frustrated') || 
+      message.includes('annoyed') || message.includes('furious')) {
+    return {
+      response: angerResponses[Math.floor(Math.random() * angerResponses.length)],
+      followUp: "Try taking deep breaths or stepping away for a moment."
+    };
+  }
+
+  // Feature inquiries
+  for (const [feature, description] of Object.entries(featuresResponses)) {
+    if (message.includes(feature)) {
+      return {
+        response: description,
+        followUp: `Would you like to explore the ${feature} feature now?`
+      };
+    }
+  }
+
+  // Help requests
+  if (message.includes('help') || message.includes('support') || message.includes('what can you do')) {
+    return {
+      response: helpResponses[Math.floor(Math.random() * helpResponses.length)],
+      followUp: "What would you like to focus on today?"
+    };
+  }
+
+  // Gratitude or thanks
+  if (message.includes('thank') || message.includes('thanks')) {
+    return {
+      response: "You're very welcome! I'm here whenever you need support. 💜"
+    };
+  }
+
+  // Default supportive response
+  return {
+    response: "I hear you. Thank you for sharing that with me.",
+    followUp: "Would you like to talk more about it, or can I help you with something specific?"
+  };
+};
+
+export const getRandomSupportiveMessage = (): string => {
+  return supportiveResponses[Math.floor(Math.random() * supportiveResponses.length)];
+};
+
+export const getRandomCopingStrategy = (): string => {
+  return copingStrategies[Math.floor(Math.random() * copingStrategies.length)];
 };

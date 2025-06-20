@@ -3,16 +3,12 @@ import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Unlock, Plus, Edit, Trash2, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface JournalProps {
-  user: User;
-}
+import { Trash2, Lock, Unlock, Plus, Search, BookOpen } from "lucide-react";
 
 interface JournalEntry {
   id: string;
@@ -23,20 +19,38 @@ interface JournalEntry {
   updated_at: string;
 }
 
+interface JournalProps {
+  user: User;
+}
+
 const Journal = ({ user }: JournalProps) => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newEntry, setNewEntry] = useState({ title: "", content: "" });
+  const [editingEntry, setEditingEntry] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchEntries();
-  }, []);
+    loadEntries();
+  }, [user]);
 
-  const fetchEntries = async () => {
+  useEffect(() => {
+    // Filter entries based on search term
+    if (searchTerm.trim() === "") {
+      setFilteredEntries(entries);
+    } else {
+      const filtered = entries.filter(
+        (entry) =>
+          entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.content.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredEntries(filtered);
+    }
+  }, [entries, searchTerm]);
+
+  const loadEntries = async () => {
     try {
       const { data, error } = await supabase
         .from("journal_entries")
@@ -47,73 +61,10 @@ const Journal = ({ user }: JournalProps) => {
       if (error) throw error;
       setEntries(data || []);
     } catch (error: any) {
+      console.error("Error loading entries:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch journal entries",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSaveEntry = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in both title and content",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      if (isCreating) {
-        // Create new entry
-        const { error } = await supabase
-          .from("journal_entries")
-          .insert([
-            {
-              user_id: user.id,
-              title: title.trim(),
-              content: content.trim(),
-              is_locked: false,
-            },
-          ]);
-
-        if (error) throw error;
-        toast({
-          title: "Entry Created! 📝",
-          description: "Your journal entry has been saved.",
-        });
-      } else if (selectedEntry) {
-        // Update existing entry
-        const { error } = await supabase
-          .from("journal_entries")
-          .update({
-            title: title.trim(),
-            content: content.trim(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", selectedEntry.id);
-
-        if (error) throw error;
-        toast({
-          title: "Entry Updated! ✏️",
-          description: "Your changes have been saved.",
-        });
-      }
-
-      // Reset form and refresh
-      setTitle("");
-      setContent("");
-      setIsCreating(false);
-      setIsEditing(false);
-      setSelectedEntry(null);
-      fetchEntries();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to save entry",
+        description: "Failed to load journal entries",
         variant: "destructive",
       });
     } finally {
@@ -121,9 +72,79 @@ const Journal = ({ user }: JournalProps) => {
     }
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
-    if (!confirm("Are you sure you want to delete this entry?")) return;
+  const createEntry = async () => {
+    if (!newEntry.title.trim() || !newEntry.content.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both a title and content for your entry",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    try {
+      const { error } = await supabase
+        .from("journal_entries")
+        .insert([
+          {
+            user_id: user.id,
+            title: newEntry.title.trim(),
+            content: newEntry.content.trim(),
+            is_locked: false,
+          },
+        ]);
+
+      if (error) throw error;
+
+      setNewEntry({ title: "", content: "" });
+      setIsCreating(false);
+      loadEntries();
+
+      toast({
+        title: "Entry Created! ✍️",
+        description: "Your journal entry has been saved successfully",
+      });
+    } catch (error: any) {
+      console.error("Error creating entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create journal entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateEntry = async (entry: JournalEntry) => {
+    try {
+      const { error } = await supabase
+        .from("journal_entries")
+        .update({
+          title: entry.title,
+          content: entry.content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", entry.id);
+
+      if (error) throw error;
+
+      setEditingEntry(null);
+      loadEntries();
+
+      toast({
+        title: "Entry Updated! 📝",
+        description: "Your changes have been saved",
+      });
+    } catch (error: any) {
+      console.error("Error updating entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update journal entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteEntry = async (entryId: string) => {
     try {
       const { error } = await supabase
         .from("journal_entries")
@@ -131,24 +152,23 @@ const Journal = ({ user }: JournalProps) => {
         .eq("id", entryId);
 
       if (error) throw error;
-      
+
+      loadEntries();
       toast({
         title: "Entry Deleted",
-        description: "The journal entry has been removed.",
+        description: "Journal entry has been removed",
       });
-      
-      setSelectedEntry(null);
-      fetchEntries();
     } catch (error: any) {
+      console.error("Error deleting entry:", error);
       toast({
         title: "Error",
-        description: "Failed to delete entry",
+        description: "Failed to delete journal entry",
         variant: "destructive",
       });
     }
   };
 
-  const handleToggleLock = async (entry: JournalEntry) => {
+  const toggleLock = async (entry: JournalEntry) => {
     try {
       const { error } = await supabase
         .from("journal_entries")
@@ -156,207 +176,235 @@ const Journal = ({ user }: JournalProps) => {
         .eq("id", entry.id);
 
       if (error) throw error;
-      
+
+      loadEntries();
       toast({
-        title: entry.is_locked ? "Entry Unlocked" : "Entry Locked",
-        description: entry.is_locked ? "Entry is now accessible" : "Entry is now protected",
+        title: entry.is_locked ? "Entry Unlocked 🔓" : "Entry Locked 🔒",
+        description: entry.is_locked 
+          ? "Entry is now editable" 
+          : "Entry is now protected from editing",
       });
-      
-      fetchEntries();
-      if (selectedEntry?.id === entry.id) {
-        setSelectedEntry({ ...entry, is_locked: !entry.is_locked });
-      }
     } catch (error: any) {
+      console.error("Error toggling lock:", error);
       toast({
         title: "Error",
-        description: "Failed to toggle lock",
+        description: "Failed to update entry lock status",
         variant: "destructive",
       });
     }
   };
 
-  const startCreating = () => {
-    setIsCreating(true);
-    setIsEditing(false);
-    setSelectedEntry(null);
-    setTitle("");
-    setContent("");
-  };
-
-  const startEditing = (entry: JournalEntry) => {
-    if (entry.is_locked) {
-      toast({
-        title: "Entry Locked",
-        description: "Unlock the entry to edit it",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsEditing(true);
-    setIsCreating(false);
-    setSelectedEntry(entry);
-    setTitle(entry.title);
-    setContent(entry.content);
-  };
-
-  const cancelEditing = () => {
-    setIsCreating(false);
-    setIsEditing(false);
-    setTitle("");
-    setContent("");
-    if (selectedEntry) {
-      setTitle(selectedEntry.title);
-      setContent(selectedEntry.content);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your journal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
-      {/* Entries List */}
-      <Card className="lg:col-span-1">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Journal Entries</CardTitle>
-          <Button onClick={startCreating} size="sm">
-            <Plus className="h-4 w-4" />
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-green-500 to-teal-500 text-white border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <BookOpen className="h-6 w-6" />
+            Your Personal Journal
+          </CardTitle>
+          <p className="text-green-100">
+            A safe space for your thoughts, feelings, and reflections 📖
+          </p>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="max-h-96 overflow-y-auto">
-            {entries.map((entry) => (
-              <div
-                key={entry.id}
-                onClick={() => {
-                  if (!isCreating && !isEditing) {
-                    setSelectedEntry(entry);
-                    if (!entry.is_locked) {
-                      setTitle(entry.title);
-                      setContent(entry.content);
-                    }
-                  }
-                }}
-                className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
-                  selectedEntry?.id === entry.id ? "bg-blue-50" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium truncate">{entry.title}</h3>
-                  <div className="flex items-center gap-1">
-                    {entry.is_locked && <Lock className="h-3 w-3 text-gray-500" />}
-                    <Badge variant="outline" className="text-xs">
-                      {new Date(entry.created_at).toLocaleDateString()}
-                    </Badge>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {entry.is_locked ? "🔒 This entry is locked" : entry.content}
-                </p>
-              </div>
-            ))}
-            {entries.length === 0 && (
-              <div className="p-4 text-center text-gray-500">
-                No journal entries yet. Start writing your first entry!
-              </div>
-            )}
-          </div>
-        </CardContent>
       </Card>
 
-      {/* Entry Editor/Viewer */}
-      <Card className="lg:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            {isCreating ? "New Entry" : isEditing ? "Edit Entry" : selectedEntry ? selectedEntry.title : "Select an Entry"}
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {selectedEntry && !isCreating && !isEditing && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleToggleLock(selectedEntry)}
-                >
-                  {selectedEntry.is_locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+      {/* Search and New Entry Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search your entries..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <Button
+          onClick={() => setIsCreating(!isCreating)}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New Entry
+        </Button>
+      </div>
+
+      {/* Search Results Info */}
+      {searchTerm && (
+        <div className="text-sm text-gray-600">
+          Found {filteredEntries.length} entr{filteredEntries.length !== 1 ? 'ies' : 'y'} 
+          {searchTerm && ` for "${searchTerm}"`}
+        </div>
+      )}
+
+      {/* New Entry Form */}
+      {isCreating && (
+        <Card className="border-green-200 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-green-700">Create New Entry</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              placeholder="Entry title..."
+              value={newEntry.title}
+              onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+              className="font-medium"
+            />
+            <Textarea
+              placeholder="What's on your mind? Write freely here..."
+              value={newEntry.content}
+              onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+              className="min-h-[200px] resize-none"
+            />
+            <div className="flex gap-2">
+              <Button onClick={createEntry} className="bg-green-600 hover:bg-green-700">
+                Save Entry
+              </Button>
+              <Button variant="outline" onClick={() => setIsCreating(false)}>
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Journal Entries */}
+      <div className="space-y-4">
+        {filteredEntries.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                {searchTerm ? "No entries found" : "No journal entries yet"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm 
+                  ? "Try a different search term or clear the search to see all entries."
+                  : "Start writing your first entry to begin your journaling journey."
+                }
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setIsCreating(true)} className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Write First Entry
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => startEditing(selectedEntry)}
-                  disabled={selectedEntry.is_locked}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteEntry(selectedEntry.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {(isCreating || isEditing) && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={cancelEditing}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSaveEntry}
-                  disabled={loading}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? "Saving..." : "Save"}
-                </Button>
-              </>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {(isCreating || isEditing) ? (
-            <>
-              <Input
-                placeholder="Entry title..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <Textarea
-                placeholder="Write your thoughts here..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={15}
-              />
-            </>
-          ) : selectedEntry ? (
-            <div className="space-y-4">
-              {selectedEntry.is_locked ? (
-                <div className="text-center py-8">
-                  <Lock className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">This entry is locked for privacy</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleToggleLock(selectedEntry)}
-                    className="mt-2"
-                  >
-                    Unlock Entry
-                  </Button>
-                </div>
-              ) : (
-                <div className="prose max-w-none">
-                  <div className="whitespace-pre-wrap">{selectedEntry.content}</div>
-                </div>
               )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              Select an entry to view or create a new one
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredEntries.map((entry) => (
+            <Card key={entry.id} className="shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    {editingEntry === entry.id && !entry.is_locked ? (
+                      <Input
+                        value={entry.title}
+                        onChange={(e) =>
+                          setEntries(entries.map(e => 
+                            e.id === entry.id ? { ...e, title: e.target.value } : e
+                          ))
+                        }
+                        className="font-semibold text-lg mb-2"
+                      />
+                    ) : (
+                      <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+                        {entry.title}
+                        {entry.is_locked && <Lock className="h-4 w-4 text-amber-500" />}
+                      </CardTitle>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span>Created: {new Date(entry.created_at).toLocaleDateString()}</span>
+                      {entry.updated_at !== entry.created_at && (
+                        <Badge variant="secondary" className="text-xs">
+                          Updated: {new Date(entry.updated_at).toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleLock(entry)}
+                      className="p-2"
+                    >
+                      {entry.is_locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteEntry(entry.id)}
+                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {editingEntry === entry.id && !entry.is_locked ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={entry.content}
+                      onChange={(e) =>
+                        setEntries(entries.map(e => 
+                          e.id === entry.id ? { ...e, content: e.target.value } : e
+                        ))
+                      }
+                      className="min-h-[150px] resize-none"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => updateEntry(entry)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Save Changes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingEntry(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">
+                      {entry.content}
+                    </p>
+                    {!entry.is_locked && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingEntry(entry.id)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        Edit Entry
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
