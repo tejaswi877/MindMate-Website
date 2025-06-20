@@ -1,302 +1,288 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Bot, User, Send, MessageSquare, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { getBotResponse } from '@/utils/botResponses';
+import { detectEmotion } from '@/utils/emotionAnalysis';
+import { useChatSessions } from '@/hooks/useChatSessions';
+import ChatMessage from './chat/ChatMessage';
+import ChatHeader from './chat/ChatHeader';
+import ChatSessionsList from './chat/ChatSessionsList';
+import type { Message, ChatBotProps } from '@/types/chat';
 
-import { useState, useEffect, useRef } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, Bot, User as UserIcon, Plus, History } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { getBotResponse } from "@/utils/botResponses";
-import { analyzeEmotion } from "@/utils/emotionAnalysis";
-import { useChatSessions } from "@/hooks/useChatSessions";
-import ChatHeader from "@/components/chat/ChatHeader";
-import ChatMessage from "@/components/chat/ChatMessage";
-import ChatSessionsList from "@/components/chat/ChatSessionsList";
-
-interface Message {
-  id: string;
-  text: string;
-  isBot: boolean;
-  timestamp: Date;
-  emotion?: string;
-}
-
-interface ChatBotProps {
-  user: User;
-}
-
-const ChatBot = ({ user }: ChatBotProps) => {
+const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
+  const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showSessions, setShowSessions] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const {
-    sessionId,
-    previousSessions,
-    createNewChatSession,
-    initializeChat,
-    loadChatSession,
-  } = useChatSessions(user);
 
-  useEffect(() => {
-    if (!sessionId) {
-      initializeChat();
-    } else {
-      loadMessages();
-    }
-  }, [sessionId]);
+  const { sessions, refetchSessions } = useChatSessions(user?.id);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    // Send initial greeting when chat starts
-    if (sessionId && messages.length === 0) {
-      const greetingResponse = getBotResponse("");
-      const greetingMessage: Message = {
-        id: Date.now().toString(),
-        text: greetingResponse.response,
-        isBot: true,
-        timestamp: new Date(),
-      };
-      setMessages([greetingMessage]);
-      saveMessageToDatabase(greetingMessage, null);
+    if (currentSessionId) {
+      loadMessages(currentSessionId);
     }
-  }, [sessionId]);
+  }, [currentSessionId]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    if (isFirstVisit && sessions.length > 0) {
+      const latestSession = sessions[0];
+      setCurrentSessionId(latestSession.id);
+      setIsFirstVisit(false);
+    }
+  }, [sessions, isFirstVisit]);
 
-  const loadMessages = async () => {
-    if (!sessionId) return;
-
+  const loadMessages = async (sessionId: string) => {
     try {
       const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("session_id", sessionId)
-        .order("created_at", { ascending: true });
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat messages",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createNewSession = async () => {
+    try {
+      const sessionName = `Chat ${new Date().toLocaleDateString()}`;
+      
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert([
+          {
+            user_id: user.id,
+            session_name: sessionName,
+          },
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      const loadedMessages: Message[] = data.map((msg) => ({
-        id: msg.id,
-        text: msg.message,
-        isBot: msg.is_bot,
-        timestamp: new Date(msg.created_at),
-        emotion: msg.emotion_detected || undefined,
-      }));
+      setCurrentSessionId(data.id);
+      setMessages([]);
+      await refetchSessions();
+      
+      // Add greeting message for new session
+      const greetingMessage = {
+        id: `greeting-${Date.now()}`,
+        message: getBotResponse("", user?.user_metadata?.username || user?.email?.split('@')[0] || 'there'),
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+      
+      setMessages([greetingMessage]);
+      
+      // Save greeting to database
+      await supabase.from('chat_messages').insert([
+        {
+          user_id: user.id,
+          session_id: data.id,
+          message: greetingMessage.message,
+          is_bot: true,
+        },
+      ]);
 
-      setMessages(loadedMessages);
-    } catch (error: any) {
-      console.error("Error loading messages:", error);
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create new chat session",
+        variant: "destructive"
+      });
     }
   };
 
-  const saveMessageToDatabase = async (message: Message, emotion: string | null) => {
-    if (!sessionId) return;
+  const selectSession = async (session: any) => {
+    setCurrentSessionId(session.id);
+    setShowSessions(false);
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || !currentSessionId) return;
+
+    const userMessage: Message = {
+      id: `temp-${Date.now()}`,
+      message: inputMessage,
+      is_bot: false,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("chat_messages")
+      // Save user message
+      const { error: userError } = await supabase
+        .from('chat_messages')
         .insert([
           {
-            session_id: sessionId,
             user_id: user.id,
-            message: message.text,
-            is_bot: message.isBot,
+            session_id: currentSessionId,
+            message: inputMessage,
+            is_bot: false,
+          },
+        ]);
+
+      if (userError) throw userError;
+
+      // Get bot response
+      const emotion = detectEmotion(inputMessage);
+      const botResponseText = getBotResponse(inputMessage, user?.user_metadata?.username || user?.email?.split('@')[0] || 'there');
+      
+      const botMessage: Message = {
+        id: `bot-${Date.now()}`,
+        message: botResponseText,
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+
+      // Save bot message
+      const { error: botError } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            user_id: user.id,
+            session_id: currentSessionId,
+            message: botResponseText,
+            is_bot: true,
             emotion_detected: emotion,
           },
         ]);
 
-      if (error) throw error;
-    } catch (error: any) {
-      console.error("Error saving message:", error);
+      if (botError) throw botError;
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !sessionId) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputMessage.trim(),
-      isBot: false,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
-    setIsLoading(true);
-
-    // Analyze emotion
-    const emotion = analyzeEmotion(userMessage.text);
-    
-    // Save user message
-    await saveMessageToDatabase(userMessage, emotion);
-
-    // Get bot response
-    const botResponse = getBotResponse(userMessage.text);
-
-    // Create bot message
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: botResponse.response,
-      isBot: true,
-      timestamp: new Date(),
-    };
-
-    // Add bot response with slight delay for natural feel
-    setTimeout(async () => {
-      setMessages((prev) => [...prev, botMessage]);
-      await saveMessageToDatabase(botMessage, null);
-
-      // Add follow-up message if exists
-      if (botResponse.followUp) {
-        setTimeout(async () => {
-          const followUpMessage: Message = {
-            id: (Date.now() + 2).toString(),
-            text: botResponse.followUp!,
-            isBot: true,
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, followUpMessage]);
-          await saveMessageToDatabase(followUpMessage, null);
-          setIsLoading(false);
-        }, 1000);
-      } else {
-        setIsLoading(false);
-      }
-    }, 800);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      sendMessage();
     }
   };
 
-  const handleNewChat = async () => {
-    const newSessionId = await createNewChatSession();
-    if (newSessionId) {
-      setMessages([]);
-      setShowSessions(false);
+  // Start new session if none exists
+  useEffect(() => {
+    if (!currentSessionId && sessions.length === 0 && !isFirstVisit) {
+      createNewSession();
     }
-  };
-
-  const handleLoadSession = async (session: any) => {
-    await loadChatSession(session);
-    setShowSessions(false);
-  };
+  }, [currentSessionId, sessions.length, isFirstVisit]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <MessageCircle className="h-6 w-6" />
-            Chat with MindMate
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            AI Companion
           </CardTitle>
-          <p className="text-purple-100">
-            Your caring AI companion is here to listen and support you 💜
-          </p>
-        </CardHeader>
-      </Card>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSessions(!showSessions)}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={createNewSession}
+            >
+              New Chat
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
 
-      {/* Chat Controls */}
-      <div className="flex gap-2 justify-end">
-        <Button
-          variant="outline"
-          onClick={() => setShowSessions(!showSessions)}
-          className="flex items-center gap-2"
-        >
-          <History className="h-4 w-4" />
-          Chat History
-        </Button>
-        <Button
-          onClick={handleNewChat}
-          className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          New Chat
-        </Button>
-      </div>
-
-      {/* Previous Sessions */}
       {showSessions && (
-        <Card>
+        <div className="px-4 pb-3">
           <ChatSessionsList
-            sessions={previousSessions}
-            onSelectSession={handleLoadSession}
+            sessions={sessions}
+            onSelectSession={selectSession}
             onClose={() => setShowSessions(false)}
           />
-        </Card>
+        </div>
       )}
 
-      {/* Chat Interface */}
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader className="pb-3">
-          <ChatHeader currentSessionId={sessionId} />
-        </CardHeader>
+      <CardContent className="flex-1 flex flex-col p-4">
+        {currentSessionId && (
+          <ChatHeader currentSessionId={currentSessionId} />
+        )}
         
-        <CardContent className="flex-1 flex flex-col p-0">
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-4 py-4">
-              {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-              
-              {isLoading && (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Bot className="h-5 w-5" />
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-sm">MindMate is thinking...</span>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex gap-2">
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Share what's on your mind..."
-                className="flex-1"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isLoading}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Press Enter to send • MindMate is here to listen and support you
-            </p>
+        <ScrollArea className="flex-1 mb-4">
+          <div className="space-y-4">
+            {messages.map((msg) => (
+              <ChatMessage key={msg.id} message={msg} />
+            ))}
+            {isLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bot className="h-4 w-4 animate-pulse" />
+                <span>AI is thinking...</span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </ScrollArea>
+
+        <div className="flex gap-2">
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Share what's on your mind..."
+            className="flex-1"
+            disabled={isLoading || !currentSessionId}
+          />
+          <Button 
+            onClick={sendMessage} 
+            disabled={isLoading || !inputMessage.trim() || !currentSessionId}
+            size="icon"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
