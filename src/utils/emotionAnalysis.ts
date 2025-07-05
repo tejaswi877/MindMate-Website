@@ -1,5 +1,4 @@
-
-export const analyzeEmotion = (message: string): string => {
+export const detectEmotion = (message: string): string => {
   const lowerMessage = message.toLowerCase();
   
   // Crisis keywords - highest priority
@@ -203,3 +202,6 @@ export const analyzeEmotion = (message: string): string => {
 
   return 'neutral';
 };
+
+// Keep the old function name as alias for backward compatibility
+export const analyzeEmotion = detectEmotion;

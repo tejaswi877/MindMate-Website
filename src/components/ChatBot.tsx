@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Bot, User, Send, MessageSquare, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getBotResponse } from '@/utils/botResponses';
@@ -68,6 +68,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     }
   };
 
+  const getUserDisplayName = () => {
+    return user?.user_metadata?.username || user?.email?.split('@')[0] || 'there';
+  };
+
   const createNewSession = async () => {
     try {
       const sessionName = `Chat ${new Date().toLocaleDateString()}`;
@@ -90,9 +94,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       await refetchSessions();
       
       // Add greeting message for new session
+      const botResponse = getBotResponse("");
       const greetingMessage = {
         id: `greeting-${Date.now()}`,
-        message: getBotResponse("", user?.user_metadata?.username || user?.email?.split('@')[0] || 'there'),
+        message: botResponse.response,
         is_bot: true,
         created_at: new Date().toISOString(),
       };
@@ -104,7 +109,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         {
           user_id: user.id,
           session_id: data.id,
-          message: greetingMessage.message,
+          message: botResponse.response,
           is_bot: true,
         },
       ]);
@@ -155,11 +160,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
       // Get bot response
       const emotion = detectEmotion(inputMessage);
-      const botResponseText = getBotResponse(inputMessage, user?.user_metadata?.username || user?.email?.split('@')[0] || 'there');
+      const botResponse = getBotResponse(inputMessage);
       
       const botMessage: Message = {
         id: `bot-${Date.now()}`,
-        message: botResponseText,
+        message: botResponse.response,
         is_bot: true,
         created_at: new Date().toISOString(),
       };
@@ -173,7 +178,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           {
             user_id: user.id,
             session_id: currentSessionId,
-            message: botResponseText,
+            message: botResponse.response,
             is_bot: true,
             emotion_detected: emotion,
           },
@@ -237,22 +242,25 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       {showSessions && (
         <div className="px-4 pb-3">
           <ChatSessionsList
-            sessions={sessions}
-            onSelectSession={selectSession}
-            onClose={() => setShowSessions(false)}
+            previousSessions={sessions}
+            loadChatSession={selectSession}
           />
         </div>
       )}
 
       <CardContent className="flex-1 flex flex-col p-4">
         {currentSessionId && (
-          <ChatHeader currentSessionId={currentSessionId} />
+          <ChatHeader sessionId={currentSessionId} />
         )}
         
         <ScrollArea className="flex-1 mb-4">
           <div className="space-y-4">
             {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
+              <ChatMessage 
+                key={msg.id} 
+                message={msg} 
+                getUserDisplayName={getUserDisplayName}
+              />
             ))}
             {isLoading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
