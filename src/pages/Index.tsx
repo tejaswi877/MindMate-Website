@@ -12,10 +12,6 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Clear any cached data for fresh start
-    localStorage.clear();
-    sessionStorage.clear();
-    
     // Initialize authentication state
     const initializeAuth = async () => {
       try {
@@ -65,6 +61,19 @@ const Index = () => {
         console.log("Auth state changed:", event, session?.user?.email);
         
         if (session?.user) {
+          // Check if user's email is confirmed
+          if (!session.user.email_confirmed_at && event === 'SIGNED_IN') {
+            // User hasn't confirmed their email yet
+            toast({
+              title: "Email Verification Required",
+              description: "Please check your email and click the verification link before accessing your account.",
+              variant: "destructive",
+            });
+            // Sign out the user since they haven't verified their email
+            await supabase.auth.signOut();
+            return;
+          }
+
           // Refresh user profile from database on auth change
           const { data: profile } = await supabase
             .from('profiles')
@@ -87,7 +96,7 @@ const Index = () => {
         
         setLoading(false);
         
-        if (event === 'SIGNED_IN') {
+        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome back, ${username}! 🎉`,
@@ -96,17 +105,13 @@ const Index = () => {
         }
         
         if (event === 'SIGNED_UP') {
-          const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
-            title: `Welcome to MindMate, ${username}! 🌟`,
-            description: "Your mental wellness journey starts now. I'm here to support you every step of the way.",
+            title: "Welcome to MindMate! 🌟",
+            description: "Please check your email to verify your account before signing in.",
           });
         }
         
         if (event === 'SIGNED_OUT') {
-          // Clear all local data on sign out
-          localStorage.clear();
-          sessionStorage.clear();
           toast({
             title: "Take care! 💙",
             description: "Remember, I'm always here when you need someone to talk to.",
@@ -123,15 +128,15 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Starting Fresh...</h2>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading MindMate...</h2>
           <p className="text-gray-500">Preparing your mental wellness companion</p>
         </div>
       </div>
     );
   }
 
-  // Show Dashboard when user is authenticated
-  if (user) {
+  // Show Dashboard when user is authenticated and email is confirmed
+  if (user?.email_confirmed_at) {
     return (
       <>
         <Dashboard user={user} />
@@ -140,7 +145,7 @@ const Index = () => {
     );
   }
 
-  // Show authentication page for non-authenticated users
+  // Show authentication page for non-authenticated users or unverified users
   return (
     <div className="min-h-screen">
       <AuthPage />

@@ -89,9 +89,15 @@ const AuthPage = () => {
         });
       } else {
         toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          title: "Account Created! 🎉",
+          description: "Please check your email to verify your account before signing in.",
         });
+        // Reset form and switch to sign in
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setUsername("");
+        setIsSignUp(false);
       }
     } catch (error: any) {
       toast({

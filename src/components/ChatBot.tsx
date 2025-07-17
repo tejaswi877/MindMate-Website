@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, MessageSquare, X } from 'lucide-react';
+import { Bot, User, Send, MessageSquare, X, Settings, RotateCcw, Trash2, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getBotResponse } from '@/utils/botResponses';
 import { detectEmotion } from '@/utils/emotionAnalysis';
 import { useChatSessions } from '@/hooks/useChatSessions';
 import ChatMessage from './chat/ChatMessage';
-import ChatHeader from './chat/ChatHeader';
 import ChatSessionsList from './chat/ChatSessionsList';
 import type { Message, ChatBotProps } from '@/types/chat';
 
@@ -215,34 +214,53 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   }, [currentSessionId, sessions.length, isFirstVisit, user?.id]);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col" style={{ backgroundColor: '#f8f9ff' }}>
+      <CardHeader className="pb-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e0e7ff' }}>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            AI Companion
+          <CardTitle className="flex items-center gap-2" style={{ color: '#4c1d95' }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#8b5cf6' }}>
+              <Bot className="h-5 w-5 text-white" />
+            </div>
+            Chat with MindMate
+            <span className="text-sm font-normal" style={{ color: '#6b7280' }}>Your AI mental health companion 💜</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowSessions(!showSessions)}
+              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
             >
-              <MessageSquare className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={createNewSession}
+              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
             >
-              New Chat
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
+            >
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
 
       {showSessions && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e0e7ff' }}>
           <ChatSessionsList
             previousSessions={sessions}
             loadChatSession={selectSession}
@@ -250,11 +268,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
         </div>
       )}
 
-      <CardContent className="flex-1 flex flex-col p-4">
-        {currentSessionId && (
-          <ChatHeader sessionId={currentSessionId} />
-        )}
-        
+      <CardContent className="flex-1 flex flex-col p-4" style={{ backgroundColor: '#f8f9ff' }}>
         <ScrollArea className="flex-1 mb-4">
           <div className="space-y-4">
             {messages.map((msg) => (
@@ -265,9 +279,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
               />
             ))}
             {isLoading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Bot className="h-4 w-4 animate-pulse" />
-                <span>AI is thinking...</span>
+              <div className="flex items-center gap-2 text-sm" style={{ color: '#6b7280' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: '#8b5cf6' }}>
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+                <span>MindMate is thinking...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -281,12 +297,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
             onKeyPress={handleKeyPress}
             placeholder="Share what's on your mind..."
             className="flex-1"
+            style={{ 
+              backgroundColor: '#ffffff',
+              borderColor: '#c7d2fe',
+              color: '#1f2937'
+            }}
             disabled={isLoading || !currentSessionId}
           />
           <Button 
             onClick={sendMessage} 
             disabled={isLoading || !inputMessage.trim() || !currentSessionId}
             size="icon"
+            style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }}
+            className="hover:bg-purple-600"
           >
             <Send className="h-4 w-4" />
           </Button>
