@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +57,8 @@ const Journal: React.FC<JournalProps> = ({ user }) => {
   }, [searchQuery, entries]);
 
   const fetchEntries = async () => {
+    if (!user?.id) return;
+
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -90,6 +91,8 @@ const Journal: React.FC<JournalProps> = ({ user }) => {
       });
       return;
     }
+
+    if (!user?.id) return;
 
     try {
       const { error } = await supabase
@@ -124,6 +127,8 @@ const Journal: React.FC<JournalProps> = ({ user }) => {
   };
 
   const deleteEntry = async (entryId: string) => {
+    if (!user?.id) return;
+
     try {
       const { error } = await supabase
         .from('journal_entries')
@@ -151,6 +156,8 @@ const Journal: React.FC<JournalProps> = ({ user }) => {
   };
 
   const toggleLock = async (entry: JournalEntry) => {
+    if (!user?.id) return;
+
     try {
       const { error } = await supabase
         .from('journal_entries')

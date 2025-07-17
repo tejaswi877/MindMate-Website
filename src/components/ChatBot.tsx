@@ -73,6 +73,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   };
 
   const createNewSession = async () => {
+    if (!user?.id) return;
+
     try {
       const sessionName = `Chat ${new Date().toLocaleDateString()}`;
       
@@ -130,7 +132,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || !currentSessionId) return;
+    if (!inputMessage.trim() || !currentSessionId || !user?.id) return;
 
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
@@ -207,10 +209,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
   // Start new session if none exists
   useEffect(() => {
-    if (!currentSessionId && sessions.length === 0 && !isFirstVisit) {
+    if (!currentSessionId && sessions.length === 0 && !isFirstVisit && user?.id) {
       createNewSession();
     }
-  }, [currentSessionId, sessions.length, isFirstVisit]);
+  }, [currentSessionId, sessions.length, isFirstVisit, user?.id]);
 
   return (
     <Card className="h-full flex flex-col">
