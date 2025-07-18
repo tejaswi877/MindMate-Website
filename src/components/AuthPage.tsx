@@ -1,106 +1,88 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const AuthPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+
+    // Email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailPattern.test(email)) {
+      newErrors.email = "Please enter a valid email.";
     }
 
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    // Password validation
+    if (!password) {
+      newErrors.password = "Password cannot be empty.";
+    }
 
-      if (error) {
-        toast({
-          title: "Sign In Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+    // For signup, validate additional fields
+    if (!isLogin) {
+      if (!username.trim()) {
+        newErrors.username = "Username is required.";
       }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      
+      if (!confirmPassword) {
+        newErrors.confirmPassword = "Please confirm your password.";
+      } else if (password !== confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match.";
+      }
     }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !username) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+    
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username.trim(),
-          },
-        },
-      });
 
-      if (error) {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-      } else if (data.user) {
-        // User is automatically signed in after signup
-        toast({
-          title: "Welcome to MindMate! 🎉",
-          description: "Your account has been created and you're now logged in!",
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username },
+            emailRedirectTo: `${window.location.origin}/`
+          }
         });
-        // Clear form fields after successful signup
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setUsername("");
+        if (error) throw error;
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to verify your account.",
+        });
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Authentication Error",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -109,176 +91,167 @@ const AuthPage = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: 'linear-gradient(120deg, #f2e8f7, #e8d4f0)',
-        fontFamily: 'Arial, sans-serif'
-      }}
-    >
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-5">
-          <div className="flex flex-col items-center">
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-              style={{ backgroundColor: '#c7b8ea' }}
-            >
-              <span className="text-2xl text-white font-bold">M</span>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">MindMate</h1>
-            <p className="text-gray-600">Your AI Mental Health Companion</p>
-          </div>
-        </div>
-
-        {/* Auth Form */}
-        <div 
-          className="bg-white p-5 rounded-lg shadow-lg border border-gray-300"
-          style={{ boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}
-        >
+    <div className="min-h-screen" style={{
+      background: "linear-gradient(120deg, #f2e8f7, #e8d4f0)",
+      fontFamily: "Arial, sans-serif"
+    }}>
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-sm">
+          {/* Header */}
           <div className="text-center mb-5">
-            <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
-              <Bot className="w-10 h-10" style={{ color: '#806ab5' }} />
+            <div className="flex flex-col items-center mb-5">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{backgroundColor: "#c7b8ea"}}>
+                <span className="text-2xl text-white font-bold">M</span>
+              </div>
+              <h1 className="text-3xl font-bold mb-1">MindMate</h1>
+              <p className="text-gray-600 text-sm">Your AI Mental Health Companion</p>
             </div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">
-              {isSignUp ? "Join MindMate" : "Welcome Back"}
+          </div>
+
+          {/* Login/Signup Box */}
+          <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-200">
+            {/* Icon */}
+            <div className="flex justify-center mb-5">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Bot className="w-10 h-10 text-purple-600" />
+              </div>
+            </div>
+
+            <h2 className="text-lg font-semibold text-center mb-1">
+              {isLogin ? "Welcome Back" : "Join MindMate"}
             </h2>
-            <p className="text-gray-600 text-sm">
-              {isSignUp 
-                ? "Create an account to start your mental wellness journey"
-                : "Log in to continue your mental wellness journey"
+            <p className="text-gray-600 text-center text-sm mb-5">
+              {isLogin 
+                ? "Log in to continue your mental wellness journey"
+                : "Create an account to start your mental wellness journey"
               }
             </p>
-          </div>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="mt-5">
-            {isSignUp && (
-              <div className="mb-4">
-                <label className="block text-left text-sm font-bold text-gray-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
-                  style={{ 
-                    backgroundColor: '#f5f5f5',
-                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
-                    width: '100%'
+            <form onSubmit={handleAuth} className="space-y-4">
+              {!isLogin && (
+                <div>
+                  <Label htmlFor="username" className="block text-left text-sm font-bold mb-1">
+                    Username
+                  </Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                    }}
+                  />
+                  {errors.username && (
+                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.username}</small>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="email" className="block text-left text-sm font-bold mb-1">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
                   }}
-                  placeholder="Enter your username"
-                  disabled={loading}
                 />
+                {errors.email && (
+                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.email}</small>
+                )}
               </div>
-            )}
 
-            <div className="mb-4">
-              <label className="block text-left text-sm font-bold text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
-                style={{ 
-                  backgroundColor: '#f5f5f5',
-                  boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
-                  width: '100%'
-                }}
-                placeholder="Enter your email"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-left text-sm font-bold text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
-                style={{ 
-                  backgroundColor: '#f5f5f5',
-                  boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
-                  width: '100%'
-                }}
-                placeholder="Enter your password"
-                disabled={loading}
-              />
-            </div>
-
-            {isSignUp && (
-              <div className="mb-4">
-                <label className="block text-left text-sm font-bold text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
+              <div>
+                <Label htmlFor="password" className="block text-left text-sm font-bold mb-1">
+                  Password
+                </Label>
+                <Input
+                  id="password"
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full h-10 px-3 py-2 border-none rounded-lg bg-gray-100 shadow-inner"
-                  style={{ 
-                    backgroundColor: '#f5f5f5',
-                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)',
-                    width: '100%'
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                  style={{
+                    backgroundColor: "#f5f5f5",
+                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
                   }}
-                  placeholder="Confirm your password"
-                  disabled={loading}
                 />
+                {errors.password && (
+                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.password}</small>
+                )}
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-10 text-white border-none rounded-lg cursor-pointer font-medium transition-colors"
-              style={{ 
-                backgroundColor: '#806ab5',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#b5a3d6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#806ab5';
-              }}
-            >
-              {loading 
-                ? (isSignUp ? "Creating Account..." : "Logging In...") 
-                : (isSignUp ? "Sign up" : "Log in")
-              }
-            </button>
-          </form>
+              {!isLogin && (
+                <div>
+                  <Label htmlFor="confirm-password" className="block text-left text-sm font-bold mb-1">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
+                    style={{
+                      backgroundColor: "#f5f5f5",
+                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
+                    }}
+                  />
+                  {errors.confirmPassword && (
+                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.confirmPassword}</small>
+                  )}
+                </div>
+              )}
 
-          <div className="mt-3">
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="w-full h-10 border-none rounded-lg cursor-pointer font-bold transition-colors"
-              style={{ 
-                backgroundColor: '#e0d4f5',
-                color: '#3f2d56'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#d0c2ec';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#e0d4f5';
-              }}
-            >
-              {isSignUp 
-                ? "Already have an account? Log In" 
-                : "Don't have an account? Sign Up"
-              }
-            </button>
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full h-10 border-none rounded-xl cursor-pointer font-medium"
+                style={{
+                  backgroundColor: "#806ab5",
+                  color: "#fff"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#b5a3d6"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#806ab5"}
+              >
+                {loading ? "Loading..." : (isLogin ? "Log in" : "Sign up")}
+              </Button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <Button
+                variant="link"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setErrors({});
+                }}
+                className="w-full h-10 mt-2 rounded-xl font-bold cursor-pointer"
+                style={{
+                  backgroundColor: "#e0d4f5",
+                  color: "#3f2d56"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#d0c2ec"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e0d4f5"}
+              >
+                {isLogin
+                  ? "Need an account? Sign up"
+                  : "Already have an account? Sign in"}
+              </Button>
+            </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>Your mental health matters. We're here to support you.</p>
         </div>
       </div>
     </div>

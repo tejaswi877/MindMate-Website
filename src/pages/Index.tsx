@@ -12,96 +12,31 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize authentication state
-    const initializeAuth = async () => {
-      try {
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting session:", error);
-          setUser(null);
-        } else if (session?.user) {
-          // Refresh user profile from database
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          // Update user metadata with fresh profile data
-          if (profile) {
-            const updatedUser = {
-              ...session.user,
-              user_metadata: {
-                ...session.user.user_metadata,
-                username: profile.username
-              }
-            };
-            setUser(updatedUser);
-          } else {
-            setUser(session.user);
-          }
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    initializeAuth();
-
-    // Listen for auth changes with proper user refresh
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: string, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
-        
-        if (session?.user) {
-          // Refresh user profile from database on auth change
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          const updatedUser = profile ? {
-            ...session.user,
-            user_metadata: {
-              ...session.user.user_metadata,
-              username: profile.username
-            }
-          } : session.user;
-          
-          setUser(updatedUser);
-        } else {
-          setUser(null);
-        }
-        
+        setUser(session?.user ?? null);
         setLoading(false);
         
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === 'SIGNED_IN') {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
-            title: `Welcome back, ${username}! 🎉`,
-            description: "Great to see you again. Ready to continue your wellness journey?",
-          });
-        }
-        
-        if (event === 'SIGNED_UP') {
-          toast({
-            title: "Welcome to MindMate! 🌟",
-            description: "Your account has been created successfully!",
+            title: `Welcome ${username}! 🎉`,
+            description: "Successfully signed in to MindMate. Your mental wellness journey continues!",
           });
         }
         
         if (event === 'SIGNED_OUT') {
           toast({
-            title: "Take care! 💙",
-            description: "Remember, I'm always here when you need someone to talk to.",
+            title: "See you soon! 👋",
+            description: "You've been signed out. Remember, we're here whenever you need support.",
           });
         }
       }
@@ -122,20 +57,9 @@ const Index = () => {
     );
   }
 
-  // Show Dashboard when user is authenticated
-  if (user) {
-    return (
-      <>
-        <Dashboard user={user} />
-        <Toaster />
-      </>
-    );
-  }
-
-  // Show authentication page for non-authenticated users
   return (
     <div className="min-h-screen">
-      <AuthPage />
+      {user ? <Dashboard user={user} /> : <AuthPage />}
       <Toaster />
     </div>
   );

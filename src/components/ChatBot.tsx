@@ -1,32 +1,39 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, MessageSquare, X, Settings, RotateCcw, Trash2, Plus } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { getBotResponse } from '@/utils/botResponses';
-import { detectEmotion } from '@/utils/emotionAnalysis';
-import { useChatSessions } from '@/hooks/useChatSessions';
-import ChatMessage from './chat/ChatMessage';
-import ChatSessionsList from './chat/ChatSessionsList';
-import type { Message, ChatBotProps } from '@/types/chat';
+import { useState, useEffect, useRef } from "react";
+import { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Send, Bot } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Message, ChatBotProps } from "@/types/chat";
+import { generateBotResponse } from "@/utils/botResponses";
+import { useChatSessions } from "@/hooks/useChatSessions";
+import ChatMessage from "@/components/chat/ChatMessage";
+import ChatHeader from "@/components/chat/ChatHeader";
+import ChatSessionsList from "@/components/chat/ChatSessionsList";
 
-const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
+const ChatBot = ({ user }: ChatBotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [showSessions, setShowSessions] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(true);
+  const [inputMessage, setInputMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPreviousSessions, setShowPreviousSessions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { sessions, refetchSessions } = useChatSessions(user?.id);
+  const {
+    sessionId,
+    setSessionId,
+    previousSessions,
+    loadPreviousSessions,
+    createNewChatSession,
+    initializeChat,
+    loadChatSession,
+  } = useChatSessions(user);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -34,287 +41,257 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   }, [messages]);
 
   useEffect(() => {
-    if (currentSessionId) {
-      loadMessages(currentSessionId);
-    }
-  }, [currentSessionId]);
+    initializeAndLoadMessages();
+  }, []);
 
-  useEffect(() => {
-    if (isFirstVisit && sessions.length > 0) {
-      const latestSession = sessions[0];
-      setCurrentSessionId(latestSession.id);
-      setIsFirstVisit(false);
+  const initializeAndLoadMessages = async () => {
+    const sessionId = await initializeChat();
+    if (sessionId) {
+      await loadMessagesForSession(sessionId);
     }
-  }, [sessions, isFirstVisit]);
+  };
 
-  const loadMessages = async (sessionId: string) => {
+  const loadMessagesForSession = async (sessionId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+      const { data: previousMessages } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (previousMessages && previousMessages.length > 0) {
+        setMessages(previousMessages);
+      } else {
+        // Add welcome message if no previous messages
+        const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
+        const welcomeMessage = {
+          id: "welcome",
+          message: `Hello ${username}! 👋 I'm MindMate, your AI mental health companion. How are you feeling today? I'm here to listen, provide support, and share coping strategies whenever you need them. 🌟`,
+          is_bot: true,
+          created_at: new Date().toISOString(),
+        };
+        setMessages([welcomeMessage]);
+      }
+    } catch (error: any) {
+      console.error("Error loading messages:", error);
+    }
+  };
+
+  const handleCreateNewChatSession = async () => {
+    const newSessionId = await createNewChatSession();
+    if (newSessionId) {
+      setMessages([]);
+      setShowPreviousSessions(false);
+      
+      // Add welcome message for new session
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
+      const welcomeMessage = {
+        id: "welcome-new",
+        message: `Hello ${username}! 👋 Welcome to a new chat session. I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+    }
+  };
+
+  const clearCurrentChat = async () => {
+    if (!sessionId) return;
+
+    try {
+      // Delete all messages in current session
+      const { error } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("session_id", sessionId);
 
       if (error) throw error;
-      setMessages(data || []);
-    } catch (error) {
-      console.error('Error loading messages:', error);
+
+      // Reset messages with welcome message
+      const username = user.user_metadata?.username || user.email?.split('@')[0] || 'there';
+      const welcomeMessage = {
+        id: "welcome-clear",
+        message: `Hello ${username}! 👋 Chat cleared! I'm MindMate, ready to support you on your mental wellness journey. How can I help you today? 🌟`,
+        is_bot: true,
+        created_at: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+
+      toast({
+        title: "Chat Cleared",
+        description: "All messages have been removed from this session",
+      });
+    } catch (error: any) {
+      console.error("Error clearing chat:", error);
       toast({
         title: "Error",
-        description: "Failed to load chat messages",
-        variant: "destructive"
+        description: "Failed to clear chat",
+        variant: "destructive",
       });
     }
   };
 
-  const getUserDisplayName = () => {
-    return user?.user_metadata?.username || user?.email?.split('@')[0] || 'there';
+  const handleLoadChatSession = async (session: any) => {
+    const loadedSessionId = await loadChatSession(session);
+    if (loadedSessionId) {
+      await loadMessagesForSession(loadedSessionId);
+      setShowPreviousSessions(false);
+    }
   };
 
-  const createNewSession = async () => {
-    if (!user?.id) return;
+  const handleInitializeChat = async () => {
+    const sessionId = await initializeChat();
+    if (sessionId) {
+      await loadMessagesForSession(sessionId);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !sessionId || loading) return;
+
+    setLoading(true);
+    const userMessage = inputMessage.trim();
+    setInputMessage("");
 
     try {
-      const sessionName = `Chat ${new Date().toLocaleDateString()}`;
-      
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .insert([
-          {
-            user_id: user.id,
-            session_name: sessionName,
-          },
-        ])
+      // Add user message to database
+      const { data: savedUserMessage, error: userError } = await supabase
+        .from("chat_messages")
+        .insert([{
+          session_id: sessionId,
+          user_id: user.id,
+          message: userMessage,
+          is_bot: false,
+        }])
         .select()
         .single();
 
-      if (error) throw error;
-
-      setCurrentSessionId(data.id);
-      setMessages([]);
-      await refetchSessions();
-      
-      // Add greeting message for new session
-      const greetingMessage = `Hello ${getUserDisplayName()}! 👋 I'm MindMate, your AI mental health companion. I'm here to support you on your wellness journey. How are you feeling today?`;
-      
-      const botMessage = {
-        id: `greeting-${Date.now()}`,
-        message: greetingMessage,
-        is_bot: true,
-        created_at: new Date().toISOString(),
-      };
-      
-      setMessages([botMessage]);
-      
-      // Save greeting to database
-      await supabase.from('chat_messages').insert([
-        {
-          user_id: user.id,
-          session_id: data.id,
-          message: greetingMessage,
-          is_bot: true,
-        },
-      ]);
-
-    } catch (error) {
-      console.error('Error creating session:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create new chat session",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const selectSession = async (session: any) => {
-    setCurrentSessionId(session.id);
-    setShowSessions(false);
-  };
-
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || !currentSessionId || !user?.id) return;
-
-    const userMessage: Message = {
-      id: `temp-${Date.now()}`,
-      message: inputMessage,
-      is_bot: false,
-      created_at: new Date().toISOString(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsLoading(true);
-
-    try {
-      // Save user message
-      const { error: userError } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            user_id: user.id,
-            session_id: currentSessionId,
-            message: inputMessage,
-            is_bot: false,
-          },
-        ]);
-
       if (userError) throw userError;
 
-      // Get bot response
-      const emotion = detectEmotion(inputMessage);
-      const botResponse = getBotResponse(inputMessage);
-      
-      const botMessage: Message = {
-        id: `bot-${Date.now()}`,
-        message: botResponse.response,
-        is_bot: true,
-        created_at: new Date().toISOString(),
-      };
+      // Add user message to UI immediately
+      setMessages(prev => [...prev, savedUserMessage]);
 
-      setMessages(prev => [...prev, botMessage]);
+      // Generate bot response based on emotion analysis
+      const botResponse = generateBotResponse(userMessage);
 
-      // Save bot message
-      const { error: botError } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            user_id: user.id,
-            session_id: currentSessionId,
-            message: botResponse.response,
-            is_bot: true,
-            emotion_detected: emotion,
-          },
-        ]);
+      // Add bot message to database
+      const { data: savedBotMessage, error: botError } = await supabase
+        .from("chat_messages")
+        .insert([{
+          session_id: sessionId,
+          user_id: user.id,
+          message: botResponse,
+          is_bot: true,
+        }])
+        .select()
+        .single();
 
       if (botError) throw botError;
 
-    } catch (error) {
-      console.error('Error sending message:', error);
+      // Add bot message to UI
+      setMessages(prev => [...prev, savedBotMessage]);
+
+    } catch (error: any) {
+      console.error("Error sending message:", error);
       toast({
         title: "Error",
         description: "Failed to send message",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
-  // Start new session if none exists
-  useEffect(() => {
-    if (!currentSessionId && sessions.length === 0 && !isFirstVisit && user?.id) {
-      createNewSession();
-    }
-  }, [currentSessionId, sessions.length, isFirstVisit, user?.id]);
+  const getUserDisplayName = () => {
+    return user.user_metadata?.username || user.email?.split('@')[0] || 'You';
+  };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-purple-50 to-indigo-100">
-      <Card className="h-full flex flex-col shadow-xl border-0">
-        <CardHeader className="pb-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <div className="text-xl font-semibold">MindMate</div>
-                <div className="text-sm text-purple-100 font-normal">Your AI Mental Health Companion 💜</div>
-              </div>
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSessions(!showSessions)}
-                className="text-white hover:bg-white/20"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={createNewSession}
-                className="text-white hover:bg-white/20"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        {showSessions && (
-          <div className="border-b bg-purple-50">
-            <ChatSessionsList
-              previousSessions={sessions}
-              loadChatSession={selectSession}
-            />
-          </div>
+    <Card className="h-[700px] flex flex-col shadow-lg border-purple-200">
+      <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
+        <ChatHeader
+          showPreviousSessions={showPreviousSessions}
+          setShowPreviousSessions={setShowPreviousSessions}
+          createNewChatSession={handleCreateNewChatSession}
+          clearCurrentChat={clearCurrentChat}
+          initializeChat={handleInitializeChat}
+        />
+      </CardHeader>
+      
+      <CardContent className="flex-1 flex flex-col p-0">
+        {/* Previous Sessions Panel */}
+        {showPreviousSessions && (
+          <ChatSessionsList
+            previousSessions={previousSessions}
+            loadChatSession={handleLoadChatSession}
+          />
         )}
 
-        <CardContent className="flex-1 flex flex-col p-6 bg-white">
-          <ScrollArea className="flex-1 mb-4 pr-4">
-            <div className="space-y-4">
-              {messages.length === 0 && !isLoading && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center">
-                    <Bot className="h-8 w-8 text-white" />
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto space-y-6 p-6 bg-gradient-to-b from-purple-25 to-blue-25">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              getUserDisplayName={getUserDisplayName}
+            />
+          ))}
+          
+          {loading && (
+            <div className="flex items-start gap-3 justify-start">
+              <Avatar className="w-8 h-8 border-2 border-purple-200">
+                <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs">
+                  <Bot className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="bg-white border border-purple-100 p-4 rounded-2xl shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Welcome to MindMate!</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    I'm here to support your mental wellness journey. Feel free to share what's on your mind, 
-                    ask about coping strategies, or just have a conversation.
-                  </p>
+                  <span className="text-xs text-gray-500">MindMate is typing...</span>
                 </div>
-              )}
-              
-              {messages.map((msg) => (
-                <ChatMessage 
-                  key={msg.id} 
-                  message={msg} 
-                  getUserDisplayName={getUserDisplayName}
-                />
-              ))}
-              
-              {isLoading && (
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center animate-pulse">
-                    <Bot className="h-4 w-4 text-white" />
-                  </div>
-                  <span>MindMate is thinking...</span>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+              </div>
             </div>
-          </ScrollArea>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
+        {/* Input */}
+        <div className="p-4 border-t border-purple-100 bg-white">
+          <div className="flex gap-3">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Share what's on your mind... I'm here to listen and support you 💜"
               onKeyPress={handleKeyPress}
-              placeholder="Share what's on your mind..."
-              className="flex-1 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
-              disabled={isLoading || !currentSessionId}
+              disabled={loading}
+              className="flex-1 border-purple-200 focus:border-purple-400 focus:ring-purple-400"
             />
             <Button 
-              onClick={sendMessage} 
-              disabled={isLoading || !inputMessage.trim() || !currentSessionId}
-              size="icon"
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
+              onClick={handleSendMessage} 
+              disabled={loading || !inputMessage.trim()}
+              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-6"
             >
               <Send className="h-4 w-4" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Press Enter to send • MindMate provides emotional support and coping strategies
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

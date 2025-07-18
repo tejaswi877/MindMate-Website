@@ -15,7 +15,7 @@ const ChatMessage = ({ message, getUserDisplayName }: ChatMessageProps) => {
     >
       {message.is_bot && (
         <Avatar className="w-8 h-8 border-2 border-purple-200">
-          <AvatarFallback className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs">
+          <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs">
             <Bot className="h-4 w-4" />
           </AvatarFallback>
         </Avatar>
@@ -24,8 +24,8 @@ const ChatMessage = ({ message, getUserDisplayName }: ChatMessageProps) => {
       <div
         className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
           message.is_bot
-            ? "bg-white border border-gray-200 text-gray-800"
-            : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white"
+            ? "bg-white border border-purple-100 text-gray-800"
+            : "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
         }`}
       >
         <div className="flex flex-col">
@@ -50,8 +50,8 @@ const ChatMessage = ({ message, getUserDisplayName }: ChatMessageProps) => {
       </div>
       
       {!message.is_bot && (
-        <Avatar className="w-8 h-8 border-2 border-purple-200">
-          <AvatarFallback className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-xs">
+        <Avatar className="w-8 h-8 border-2 border-blue-200">
+          <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs">
             <UserIcon className="h-4 w-4" />
           </AvatarFallback>
         </Avatar>
