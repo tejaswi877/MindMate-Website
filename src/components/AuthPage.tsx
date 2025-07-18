@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -91,6 +90,11 @@ const AuthPage = () => {
           title: "Account Created! 🎉",
           description: "Welcome to MindMate! You can now start using the app.",
         });
+        // Clear form fields after successful signup
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setUsername("");
       }
     } catch (error: any) {
       toast({
