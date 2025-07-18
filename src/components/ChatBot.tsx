@@ -95,22 +95,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
       await refetchSessions();
       
       // Add greeting message for new session
-      const botResponse = getBotResponse("");
-      const greetingMessage = {
+      const greetingMessage = `Hello ${getUserDisplayName()}! 👋 I'm MindMate, your AI mental health companion. I'm here to support you on your wellness journey. How are you feeling today?`;
+      
+      const botMessage = {
         id: `greeting-${Date.now()}`,
-        message: botResponse.response,
+        message: greetingMessage,
         is_bot: true,
         created_at: new Date().toISOString(),
       };
       
-      setMessages([greetingMessage]);
+      setMessages([botMessage]);
       
       // Save greeting to database
       await supabase.from('chat_messages').insert([
         {
           user_id: user.id,
           session_id: data.id,
-          message: botResponse.response,
+          message: greetingMessage,
           is_bot: true,
         },
       ]);
@@ -214,108 +215,106 @@ const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   }, [currentSessionId, sessions.length, isFirstVisit, user?.id]);
 
   return (
-    <Card className="h-full flex flex-col" style={{ backgroundColor: '#f8f9ff' }}>
-      <CardHeader className="pb-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e0e7ff' }}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2" style={{ color: '#4c1d95' }}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#8b5cf6' }}>
-              <Bot className="h-5 w-5 text-white" />
-            </div>
-            Chat with MindMate
-            <span className="text-sm font-normal" style={{ color: '#6b7280' }}>Your AI mental health companion 💜</span>
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSessions(!showSessions)}
-              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={createNewSession}
-              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              style={{ borderColor: '#c7d2fe', color: '#4c1d95' }}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      {showSessions && (
-        <div className="px-4 pb-3" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e0e7ff' }}>
-          <ChatSessionsList
-            previousSessions={sessions}
-            loadChatSession={selectSession}
-          />
-        </div>
-      )}
-
-      <CardContent className="flex-1 flex flex-col p-4" style={{ backgroundColor: '#f8f9ff' }}>
-        <ScrollArea className="flex-1 mb-4">
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <ChatMessage 
-                key={msg.id} 
-                message={msg} 
-                getUserDisplayName={getUserDisplayName}
-              />
-            ))}
-            {isLoading && (
-              <div className="flex items-center gap-2 text-sm" style={{ color: '#6b7280' }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse" style={{ backgroundColor: '#8b5cf6' }}>
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-                <span>MindMate is thinking...</span>
+    <div className="h-full flex flex-col bg-gradient-to-br from-purple-50 to-indigo-100">
+      <Card className="h-full flex flex-col shadow-xl border-0">
+        <CardHeader className="pb-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <Bot className="h-6 w-6 text-white" />
               </div>
-            )}
-            <div ref={messagesEndRef} />
+              <div>
+                <div className="text-xl font-semibold">MindMate</div>
+                <div className="text-sm text-purple-100 font-normal">Your AI Mental Health Companion 💜</div>
+              </div>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSessions(!showSessions)}
+                className="text-white hover:bg-white/20"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={createNewSession}
+                className="text-white hover:bg-white/20"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </ScrollArea>
+        </CardHeader>
 
-        <div className="flex gap-2">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Share what's on your mind..."
-            className="flex-1"
-            style={{ 
-              backgroundColor: '#ffffff',
-              borderColor: '#c7d2fe',
-              color: '#1f2937'
-            }}
-            disabled={isLoading || !currentSessionId}
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={isLoading || !inputMessage.trim() || !currentSessionId}
-            size="icon"
-            style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }}
-            className="hover:bg-purple-600"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        {showSessions && (
+          <div className="border-b bg-purple-50">
+            <ChatSessionsList
+              previousSessions={sessions}
+              loadChatSession={selectSession}
+            />
+          </div>
+        )}
+
+        <CardContent className="flex-1 flex flex-col p-6 bg-white">
+          <ScrollArea className="flex-1 mb-4 pr-4">
+            <div className="space-y-4">
+              {messages.length === 0 && !isLoading && (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center">
+                    <Bot className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Welcome to MindMate!</h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    I'm here to support your mental wellness journey. Feel free to share what's on your mind, 
+                    ask about coping strategies, or just have a conversation.
+                  </p>
+                </div>
+              )}
+              
+              {messages.map((msg) => (
+                <ChatMessage 
+                  key={msg.id} 
+                  message={msg} 
+                  getUserDisplayName={getUserDisplayName}
+                />
+              ))}
+              
+              {isLoading && (
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center animate-pulse">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
+                  <span>MindMate is thinking...</span>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="flex gap-3 p-4 bg-gray-50 rounded-xl">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Share what's on your mind..."
+              className="flex-1 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+              disabled={isLoading || !currentSessionId}
+            />
+            <Button 
+              onClick={sendMessage} 
+              disabled={isLoading || !inputMessage.trim() || !currentSessionId}
+              size="icon"
+              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
