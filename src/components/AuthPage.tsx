@@ -69,7 +69,7 @@ const AuthPage = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -85,10 +85,11 @@ const AuthPage = () => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
+      } else if (data.user) {
+        // User is automatically signed in after signup
         toast({
-          title: "Account Created! 🎉",
-          description: "Welcome to MindMate! You can now start using the app.",
+          title: "Welcome to MindMate! 🎉",
+          description: "Your account has been created and you're now logged in!",
         });
         // Clear form fields after successful signup
         setEmail("");
