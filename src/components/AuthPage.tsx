@@ -77,7 +77,6 @@ const AuthPage = () => {
           data: {
             username: username.trim(),
           },
-          emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
@@ -90,14 +89,8 @@ const AuthPage = () => {
       } else {
         toast({
           title: "Account Created! 🎉",
-          description: "Please check your email to verify your account before signing in.",
+          description: "Welcome to MindMate! You can now start using the app.",
         });
-        // Reset form and switch to sign in
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setUsername("");
-        setIsSignUp(false);
       }
     } catch (error: any) {
       toast({

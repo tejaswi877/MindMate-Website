@@ -61,19 +61,6 @@ const Index = () => {
         console.log("Auth state changed:", event, session?.user?.email);
         
         if (session?.user) {
-          // Check if user's email is confirmed
-          if (!session.user.email_confirmed_at && event === 'SIGNED_IN') {
-            // User hasn't confirmed their email yet
-            toast({
-              title: "Email Verification Required",
-              description: "Please check your email and click the verification link before accessing your account.",
-              variant: "destructive",
-            });
-            // Sign out the user since they haven't verified their email
-            await supabase.auth.signOut();
-            return;
-          }
-
           // Refresh user profile from database on auth change
           const { data: profile } = await supabase
             .from('profiles')
@@ -96,7 +83,7 @@ const Index = () => {
         
         setLoading(false);
         
-        if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        if (event === 'SIGNED_IN' && session?.user) {
           const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
           toast({
             title: `Welcome back, ${username}! 🎉`,
@@ -107,7 +94,7 @@ const Index = () => {
         if (event === 'SIGNED_UP') {
           toast({
             title: "Welcome to MindMate! 🌟",
-            description: "Please check your email to verify your account before signing in.",
+            description: "Your account has been created successfully!",
           });
         }
         
@@ -135,8 +122,8 @@ const Index = () => {
     );
   }
 
-  // Show Dashboard when user is authenticated and email is confirmed
-  if (user?.email_confirmed_at) {
+  // Show Dashboard when user is authenticated
+  if (user) {
     return (
       <>
         <Dashboard user={user} />
@@ -145,7 +132,7 @@ const Index = () => {
     );
   }
 
-  // Show authentication page for non-authenticated users or unverified users
+  // Show authentication page for non-authenticated users
   return (
     <div className="min-h-screen">
       <AuthPage />
