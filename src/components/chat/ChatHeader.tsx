@@ -20,15 +20,15 @@ const ChatHeader = ({
 }: ChatHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
-      <CardTitle className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-          <Bot className="h-6 w-6 text-white" />
+      <CardTitle className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+          <Bot className="h-7 w-7 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h3 className="text-xl font-bold text-white">
             Chat with MindMate
           </h3>
-          <p className="text-sm text-muted-foreground font-normal">
+          <p className="text-sm text-indigo-100 font-normal">
             Your AI mental health companion 💜
           </p>
         </div>
@@ -38,7 +38,7 @@ const ChatHeader = ({
           variant="outline" 
           size="sm" 
           onClick={() => setShowPreviousSessions(!showPreviousSessions)}
-          className="hover:bg-purple-50"
+          className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:text-white rounded-xl"
           title="Previous Chat"
         >
           <History className="h-4 w-4" />
@@ -47,7 +47,7 @@ const ChatHeader = ({
           variant="outline" 
           size="sm" 
           onClick={createNewChatSession}
-          className="hover:bg-purple-50"
+          className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:text-white rounded-xl"
           title="New Chat"
         >
           <Plus className="h-4 w-4" />
@@ -56,7 +56,7 @@ const ChatHeader = ({
           variant="outline" 
           size="sm" 
           onClick={clearCurrentChat}
-          className="hover:bg-red-50 hover:border-red-200"
+          className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-red-500/50 hover:text-white rounded-xl"
           title="Clear Chat"
         >
           <Trash2 className="h-4 w-4" />
@@ -65,7 +65,7 @@ const ChatHeader = ({
           variant="outline" 
           size="sm" 
           onClick={initializeChat}
-          className="hover:bg-purple-50"
+          className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:text-white rounded-xl"
           title="Refresh"
         >
           <RefreshCw className="h-4 w-4" />

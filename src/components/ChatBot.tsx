@@ -255,16 +255,18 @@ const ChatBot = ({ user }: ChatBotProps) => {
   // Don't show sensitive data if session is invalid
   if (!isSessionValid()) {
     return (
-      <Card className="h-[700px] flex flex-col justify-center items-center shadow-lg border-purple-200">
+      <Card className="h-[700px] flex flex-col justify-center items-center shadow-xl border-0 bg-gradient-to-br from-indigo-50 via-purple-25 to-blue-50">
         <div className="text-center p-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Bot className="h-8 w-8 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Bot className="h-10 w-10 text-white" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Session Expired</h3>
-          <p className="text-gray-500 mb-4">For your security, please sign in again to continue</p>
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            Session Expired
+          </h3>
+          <p className="text-gray-600 mb-6 text-lg">For your security, please sign in again to continue</p>
           <Button 
             onClick={() => supabase.auth.signOut()}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
           >
             Sign In Again
           </Button>
@@ -274,8 +276,8 @@ const ChatBot = ({ user }: ChatBotProps) => {
   }
 
   return (
-    <Card className="h-[700px] flex flex-col shadow-lg border-purple-200">
-      <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
+    <Card className="h-[700px] flex flex-col shadow-xl border-0 bg-gradient-to-br from-indigo-50 via-purple-25 to-blue-50">
+      <CardHeader className="pb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 rounded-t-xl">
         <ChatHeader
           showPreviousSessions={showPreviousSessions}
           setShowPreviousSessions={setShowPreviousSessions}
@@ -295,7 +297,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-6 p-6 bg-gradient-to-b from-purple-25 to-blue-25">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
@@ -306,19 +308,19 @@ const ChatBot = ({ user }: ChatBotProps) => {
           
           {loading && (
             <div className="flex items-start gap-3 justify-start">
-              <Avatar className="w-8 h-8 border-2 border-purple-200">
-                <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs">
-                  <Bot className="h-4 w-4" />
+              <Avatar className="w-10 h-10 border-3 border-white shadow-lg">
+                <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white">
+                  <Bot className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
-              <div className="bg-white border border-purple-100 p-4 rounded-2xl shadow-sm">
-                <div className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-sm border border-indigo-100 p-4 rounded-2xl shadow-lg max-w-[80%]">
+                <div className="flex items-center gap-3">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                  <span className="text-xs text-gray-500">MindMate is typing...</span>
+                  <span className="text-sm text-gray-600 font-medium">MindMate is thinking...</span>
                 </div>
               </div>
             </div>
@@ -327,25 +329,25 @@ const ChatBot = ({ user }: ChatBotProps) => {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-purple-100 bg-white">
-          <div className="flex gap-3">
+        <div className="p-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-t border-indigo-100">
+          <div className="flex gap-4">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Share what's on your mind... I'm here to listen and support you 💜"
               onKeyPress={handleKeyPress}
               disabled={loading}
-              className="flex-1 border-purple-200 focus:border-purple-400 focus:ring-purple-400"
+              className="flex-1 border-2 border-indigo-200 focus:border-indigo-400 focus:ring-indigo-400 rounded-xl bg-white/80 backdrop-blur-sm text-gray-700 placeholder:text-gray-500"
             />
             <Button 
               onClick={handleSendMessage} 
               disabled={loading || !inputMessage.trim()}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-6"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="text-xs text-gray-500 mt-3 text-center">
             Press Enter to send • MindMate provides emotional support and coping strategies
           </p>
         </div>
