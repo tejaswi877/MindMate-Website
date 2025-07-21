@@ -1,8 +1,8 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -10,6 +10,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -43,9 +44,13 @@ const AuthPage = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced validation
-    if (!email.trim() || !password.trim() || !username.trim()) {
+    if (!email.trim() || !password.trim() || !username.trim() || !confirmPassword.trim()) {
       setError("All fields are required");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
@@ -88,15 +93,14 @@ const AuthPage = () => {
           description: "We've sent you a confirmation link to complete your registration.",
         });
       } else if (data.session) {
-        // User is automatically logged in
         toast({
           title: `Welcome ${username}! 🎉`,
           description: "Your MindMate account is ready!",
         });
-        // Clear form
         setEmail("");
         setPassword("");
         setUsername("");
+        setConfirmPassword("");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -140,7 +144,6 @@ const AuthPage = () => {
           title: `Welcome back ${username}! 🎉`,
           description: "Successfully signed in to MindMate",
         });
-        // Clear form
         setEmail("");
         setPassword("");
       }
@@ -153,93 +156,201 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
-      <Card className="w-96 bg-white shadow-lg rounded-lg border-purple-200">
-        <CardHeader className="flex flex-col items-center justify-center p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-lg">
-          <h1 className="text-2xl font-semibold text-gray-800">{isSignUp ? "Create Account" : "Sign In"}</h1>
-          <p className="text-sm text-gray-500 mt-1">Start your journey to a better you</p>
-        </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <Input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Choose a username"
-                  className="mt-1 block w-full border-purple-200 focus:border-purple-400 focus:ring-purple-400"
-                />
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(120deg, #f2e8f7, #e8d4f0)',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-full max-w-sm mx-auto text-center" style={{ margin: '50px auto' }}>
+          {/* Header */}
+          <div className="mb-5">
+            <div className="flex flex-col items-center">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                style={{ backgroundColor: '#c7b8ea' }}
+              >
+                <span className="text-2xl text-white font-bold">M</span>
               </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email address"
-                className="mt-1 block w-full border-purple-200 focus:border-purple-400 focus:ring-purple-400"
-              />
+              <h1 className="text-3xl font-normal mb-0" style={{ marginBottom: '1px' }}>
+                MindMate
+              </h1>
+              <p className="text-gray-600 text-sm">Your AI Mental Health Companion</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your secure password"
-                  className="mt-1 block w-full border-purple-200 focus:border-purple-400 focus:ring-purple-400"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 px-3 flex items-center focus:outline-none"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-500" />
-                  )}
-                </button>
+          </div>
+
+          {/* Login Box */}
+          <div 
+            className="bg-white p-5 rounded-lg shadow-lg"
+            style={{ 
+              border: '1px solid #ddd',
+              boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <div className="w-10 h-10 flex items-center justify-center mx-auto mb-5">
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-lg">🤖</span>
               </div>
+            </div>
+            
+            <h2 className="text-lg mb-1">
+              {isSignUp ? "Join MindMate" : "Welcome Back"}
+            </h2>
+            <p className="text-gray-600 text-sm mb-5">
+              {isSignUp 
+                ? "Create an account to start your mental wellness journey"
+                : "Log in to continue your mental wellness journey"
+              }
+            </p>
+
+            <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="mt-5">
               {isSignUp && (
-                <div className="mt-2 text-xs text-gray-500">
-                  Password must be at least 8 characters with uppercase, lowercase, number, and special character.
+                <div className="mb-4">
+                  <label className="block text-left text-xs font-bold mb-1" htmlFor="username">
+                    Username
+                  </label>
+                  <Input
+                    type="text"
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your username"
+                    className="w-full h-10 mb-4 p-2 border-none rounded-lg shadow-inner"
+                    style={{ 
+                      backgroundColor: '#f5f5f5',
+                      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
                 </div>
               )}
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
-            >
-              {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white mx-auto" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                `${isSignUp ? "Create Account" : "Sign In"}`
+              
+              <div className="mb-4">
+                <label className="block text-left text-xs font-bold mb-1" htmlFor="email">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full h-10 mb-4 p-2 border-none rounded-lg shadow-inner"
+                  style={{ 
+                    backgroundColor: '#f5f5f5',
+                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-left text-xs font-bold mb-1" htmlFor="password">
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full h-10 mb-4 p-2 pr-10 border-none rounded-lg shadow-inner"
+                    style={{ 
+                      backgroundColor: '#f5f5f5',
+                      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 text-gray-500"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {isSignUp && (
+                <div className="mb-4">
+                  <label className="block text-left text-xs font-bold mb-1" htmlFor="confirm-password">
+                    Confirm Password
+                  </label>
+                  <Input
+                    type="password"
+                    id="confirm-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    className="w-full h-10 mb-4 p-2 border-none rounded-lg shadow-inner"
+                    style={{ 
+                      backgroundColor: '#f5f5f5',
+                      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                </div>
               )}
-            </Button>
-          </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              className="text-sm text-purple-500 hover:underline"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError("");
-              }}
-            >
-              {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
-            </button>
+
+              {error && (
+                <div className="text-red-500 text-xs mb-4 text-left">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                disabled={loading}
+                className="w-full h-10 text-white border-none rounded-lg cursor-pointer mb-2"
+                style={{ 
+                  backgroundColor: '#806ab5',
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    (e.target as HTMLElement).style.backgroundColor = '#b5a3d6';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    (e.target as HTMLElement).style.backgroundColor = '#806ab5';
+                  }
+                }}
+              >
+                {loading ? (
+                  <svg className="animate-spin h-5 w-5 text-white mx-auto" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  `${isSignUp ? "Sign up" : "Log in"}`
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                className="w-full h-10 mt-2 border-none rounded-lg cursor-pointer font-bold"
+                style={{
+                  backgroundColor: '#e0d4f5',
+                  color: '#3f2d56'
+                }}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError("");
+                  setEmail("");
+                  setPassword("");
+                  setUsername("");
+                  setConfirmPassword("");
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = '#d0c2ec';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.backgroundColor = '#e0d4f5';
+                }}
+              >
+                {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
+              </button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
