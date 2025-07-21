@@ -12,32 +12,76 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Enhanced session checking and auth state management
+    const initializeAuth = async () => {
+      try {
+        // Check initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (event === 'SIGNED_IN') {
-          const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'there';
-          toast({
-            title: `Welcome ${username}! 🎉`,
-            description: "Successfully signed in to MindMate. Your mental wellness journey continues!",
-          });
+        if (error) {
+          console.error("Session error:", error);
+          setUser(null);
+        } else {
+          setUser(session?.user ?? null);
         }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Enhanced auth state listener with better error handling
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === 'SIGNED_OUT') {
-          toast({
-            title: "See you soon! 👋",
-            description: "You've been signed out. Remember, we're here whenever you need support.",
-          });
+        try {
+          setUser(session?.user ?? null);
+          setLoading(false);
+          
+          if (event === 'SIGNED_IN') {
+            const username = session?.user?.user_metadata?.username || 
+                           session?.user?.email?.split('@')[0] || 'there';
+            toast({
+              title: `Welcome back ${username}! 🎉`,
+              description: "Your MindMate session is ready for you!",
+            });
+            
+            // Refresh data for new session
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+          
+          if (event === 'SIGNED_OUT') {
+            // Clear all local data on sign out
+            setUser(null);
+            toast({
+              title: "Signed Out Safely 👋",
+              description: "Your data is secure. Sign in anytime to continue your wellness journey!",
+            });
+            
+            // Clear any cached data
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+
+          if (event === 'TOKEN_REFRESHED') {
+            console.log("Token refreshed successfully");
+          }
+
+          if (event === 'USER_UPDATED') {
+            console.log("User profile updated");
+          }
+
+        } catch (error) {
+          console.error("Auth state change error:", error);
+          setUser(null);
         }
       }
     );

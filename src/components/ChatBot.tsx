@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +30,17 @@ const ChatBot = ({ user }: ChatBotProps) => {
     initializeChat,
     loadChatSession,
   } = useChatSessions(user);
+
+  // Check if user session is valid and strong
+  const isSessionValid = () => {
+    if (!user || !user.id) return false;
+    // Add additional session validation
+    const sessionAge = user.last_sign_in_at ? 
+      Date.now() - new Date(user.last_sign_in_at).getTime() : 
+      Infinity;
+    // Session expires after 24 hours for security
+    return sessionAge < 24 * 60 * 60 * 1000;
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -147,13 +157,30 @@ const ChatBot = ({ user }: ChatBotProps) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !sessionId || loading) return;
+    // Enhanced security check
+    if (!inputMessage.trim() || !sessionId || loading || !isSessionValid()) {
+      if (!isSessionValid()) {
+        toast({
+          title: "Session Expired",
+          description: "Please sign in again for security",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+      }
+      return;
+    }
 
     setLoading(true);
     const userMessage = inputMessage.trim();
     setInputMessage("");
 
     try {
+      // Enhanced user authentication check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || session.user.id !== user.id) {
+        throw new Error("Authentication required");
+      }
+
       // Add user message to database
       const { data: savedUserMessage, error: userError } = await supabase
         .from("chat_messages")
@@ -171,7 +198,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
       // Add user message to UI immediately
       setMessages(prev => [...prev, savedUserMessage]);
 
-      // Generate bot response based on emotion analysis
+      // Generate enhanced bot response
       const botResponse = generateBotResponse(userMessage);
 
       // Add bot message to database
@@ -193,11 +220,21 @@ const ChatBot = ({ user }: ChatBotProps) => {
 
     } catch (error: any) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
+      
+      if (error.message.includes("Authentication") || error.message.includes("JWT")) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in again to continue",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+      } else {
+        toast({
+          title: "Message Failed",
+          description: "Please try again or refresh the page",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -213,6 +250,27 @@ const ChatBot = ({ user }: ChatBotProps) => {
   const getUserDisplayName = () => {
     return user.user_metadata?.username || user.email?.split('@')[0] || 'You';
   };
+
+  // Don't show sensitive data if session is invalid
+  if (!isSessionValid()) {
+    return (
+      <Card className="h-[700px] flex flex-col justify-center items-center shadow-lg border-purple-200">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Bot className="h-8 w-8 text-white" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">Session Expired</h3>
+          <p className="text-gray-500 mb-4">For your security, please sign in again to continue</p>
+          <Button 
+            onClick={() => supabase.auth.signOut()}
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+          >
+            Sign In Again
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-[700px] flex flex-col shadow-lg border-purple-200">

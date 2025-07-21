@@ -1,12 +1,16 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
+
+interface AuthFormProps {
+  isLogin: boolean;
+  setIsLogin: (isLogin: boolean) => void;
+}
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,74 +19,120 @@ const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-
-    // Email validation
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailPattern.test(email)) {
-      newErrors.email = "Please enter a valid email.";
-    }
-
-    // Password validation
-    if (!password) {
-      newErrors.password = "Password cannot be empty.";
-    }
-
-    // For signup, validate additional fields
-    if (!isLogin) {
-      if (!username.trim()) {
-        newErrors.username = "Username is required.";
-      }
-      
-      if (!confirmPassword) {
-        newErrors.confirmPassword = "Please confirm your password.";
-      } else if (password !== confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match.";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
+    }
+
+    // Enhanced password validation
+    if (!isLogin) {
+      if (password.length < 8) {
+        toast({
+          title: "Weak Password",
+          description: "Password must be at least 8 characters long",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        toast({
+          title: "Password Mismatch",
+          description: "Passwords do not match",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!username.trim()) {
+        toast({
+          title: "Username Required",
+          description: "Please enter a username",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
+
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error('Invalid email or password. Please check your credentials and try again.');
+          }
+          throw error;
+        }
+
+        if (data.user) {
+          // Clear any existing data and refresh
+          window.location.reload();
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
+        // Sign up new user
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { username },
-            emailRedirectTo: `${window.location.origin}/`
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              username: username.trim(),
+            }
           }
         });
-        if (error) throw error;
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account.",
-        });
+
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            throw new Error('An account with this email already exists. Please sign in instead.');
+          }
+          throw error;
+        }
+
+        if (data.user) {
+          // Clear form
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
+          setUsername("");
+          
+          // If user is immediately confirmed (no email verification), they're logged in
+          if (data.session) {
+            toast({
+              title: `Welcome ${username}! 🎉`,
+              description: "Your MindMate journey begins now!",
+            });
+            // Refresh to start fresh
+            window.location.reload();
+          } else {
+            // Email confirmation required
+            toast({
+              title: "Check Your Email! 📧",
+              description: `We've sent a confirmation link to ${email}. Please check your email and click the link to activate your account.`,
+            });
+            setIsLogin(true);
+          }
+        }
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
-        title: "Authentication Error",
-        description: error.message,
+        title: isLogin ? "Sign In Failed" : "Sign Up Failed",
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -91,169 +141,91 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{
-      background: "linear-gradient(120deg, #f2e8f7, #e8d4f0)",
-      fontFamily: "Arial, sans-serif"
-    }}>
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-sm">
-          {/* Header */}
-          <div className="text-center mb-5">
-            <div className="flex flex-col items-center mb-5">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{backgroundColor: "#c7b8ea"}}>
-                <span className="text-2xl text-white font-bold">M</span>
-              </div>
-              <h1 className="text-3xl font-bold mb-1">MindMate</h1>
-              <p className="text-gray-600 text-sm">Your AI Mental Health Companion</p>
-            </div>
-          </div>
-
-          {/* Login/Signup Box */}
-          <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-200">
-            {/* Icon */}
-            <div className="flex justify-center mb-5">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Bot className="w-10 h-10 text-purple-600" />
-              </div>
-            </div>
-
-            <h2 className="text-lg font-semibold text-center mb-1">
-              {isLogin ? "Welcome Back" : "Join MindMate"}
-            </h2>
-            <p className="text-gray-600 text-center text-sm mb-5">
-              {isLogin 
-                ? "Log in to continue your mental wellness journey"
-                : "Create an account to start your mental wellness journey"
-              }
-            </p>
-
-            <form onSubmit={handleAuth} className="space-y-4">
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="username" className="block text-left text-sm font-bold mb-1">
-                    Username
-                  </Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
-                    style={{
-                      backgroundColor: "#f5f5f5",
-                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
-                    }}
-                  />
-                  {errors.username && (
-                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.username}</small>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="email" className="block text-left text-sm font-bold mb-1">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
-                  style={{
-                    backgroundColor: "#f5f5f5",
-                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
-                  }}
-                />
-                {errors.email && (
-                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.email}</small>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="password" className="block text-left text-sm font-bold mb-1">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
-                  style={{
-                    backgroundColor: "#f5f5f5",
-                    boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
-                  }}
-                />
-                {errors.password && (
-                  <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.password}</small>
-                )}
-              </div>
-
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="confirm-password" className="block text-left text-sm font-bold mb-1">
-                    Confirm Password
-                  </Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-10 mb-3 p-3 border-none rounded-xl bg-gray-100 shadow-inner"
-                    style={{
-                      backgroundColor: "#f5f5f5",
-                      boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.1)"
-                    }}
-                  />
-                  {errors.confirmPassword && (
-                    <small className="text-red-500 text-xs block -mt-2 mb-2">{errors.confirmPassword}</small>
-                  )}
-                </div>
-              )}
-
-              <Button 
-                type="submit" 
+    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      <Card className="w-96 p-4 shadow-lg border-purple-200">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-semibold text-center">
+            {isLogin ? "Sign In" : "Create Account"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {!isLogin && (
+            <div className="grid gap-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                placeholder="Enter username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 disabled={loading}
-                className="w-full h-10 border-none rounded-xl cursor-pointer font-medium"
-                style={{
-                  backgroundColor: "#806ab5",
-                  color: "#fff"
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#b5a3d6"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#806ab5"}
-              >
-                {loading ? "Loading..." : (isLogin ? "Log in" : "Sign up")}
-              </Button>
-            </form>
-
-            <div className="mt-4 text-center">
+                className="border-purple-300 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+          )}
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              placeholder="Enter email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              className="border-purple-300 focus:border-purple-500 focus:ring-purple-500"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                placeholder="Enter password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="border-purple-300 focus:border-purple-500 focus:ring-purple-500 pr-10"
+              />
               <Button
-                variant="link"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="w-full h-10 mt-2 rounded-xl font-bold cursor-pointer"
-                style={{
-                  backgroundColor: "#e0d4f5",
-                  color: "#3f2d56"
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#d0c2ec"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#e0d4f5"}
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                variant="ghost"
+                className="absolute right-1 top-0 h-full rounded-none p-0 text-gray-500 hover:bg-gray-100"
               >
-                {isLogin
-                  ? "Need an account? Sign up"
-                  : "Already have an account? Sign in"}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+                <span className="sr-only">Show password</span>
               </Button>
             </div>
           </div>
+          {!isLogin && (
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                placeholder="Confirm password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading}
+                className="border-purple-300 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+          )}
+          <Button onClick={handleAuth} disabled={loading} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white">
+            {loading ? (isLogin ? "Signing In..." : "Creating Account...") : (isLogin ? "Sign In" : "Sign Up")}
+          </Button>
+        </CardContent>
+        <div className="mt-4 text-center">
+          <Button variant="link" onClick={() => setIsLogin(!isLogin)} disabled={loading}>
+            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
