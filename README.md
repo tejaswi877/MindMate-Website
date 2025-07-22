@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+# MindMate – AI-Powered Mental Health Support Companion
+MindMate is a full-stack AI-powered mental health companion web application designed to support emotional well-being. It combines advanced AI-driven features with tools like Rule-based Chatbot,mood tracking, journaling, gamification, reminders, and crisis support. The platform aims to create a safe, personalized, and engaging space for mental health care.
 
-## Project info
+---
 
-**URL**: https://lovable.dev/projects/3c1f7ba1-e39c-4ff0-9c1a-6146663a94a2
+##  Features
 
-## How can I edit this code?
+- **AI Chatbot** – A conversational companion for mental health guidance and emotional support.
+- **Mood Tracker** – Log your daily mood and monitor emotional trends with visual dashboards.
+- **Journal** – A secure and private journaling system to record thoughts and experiences.
+- **Gamification** – Streaks, badges, and points to encourage consistent engagement.
+- **Reminders** – Personalized reminders for journaling, mood logging, or mindfulness exercises.
+- **Crisis Support** – Emergency contacts and resources for immediate help.
+- **Secure Data Access** – Role-Level Security (RLS) with Supabase for data privacy.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+##  Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3c1f7ba1-e39c-4ff0-9c1a-6146663a94a2) and start prompting.
+**Frontend:**
+- React 18 + TypeScript
+- Vite for fast builds
+- Tailwind CSS + Shadcn/UI for modern UI components
 
-Changes made via Lovable will be committed automatically to this repo.
+**Backend & Database:**
+- Supabase (PostgreSQL) with RLS policies
+- Real-time updates using Supabase subscriptions
 
-**Use your preferred IDE**
+**Other Tools:**
+- Authentication via Supabase Auth
+- Deployment using Lovable platform
+- Rule-based chatbot implemented with custom logic
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+##  Security & Privacy
 
-Follow these steps:
+- All user data is stored securely with Supabase’s RLS policies.
+- No third-party tracking or analytics are implemented.
+- Journals and mood entries are private to the user.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+##  Future Scope
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Mobile app version (React Native)
+- Advanced AI mental health insights
+- Integration with wearable devices (fitness bands, smartwatches)
+- Multi-language chatbot support
+- Daily mental health exercises and mindfulness sessions
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+---
 
-**Edit a file directly in GitHub**
+##  Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Contributions are welcome!  
+Please open an issue or submit a pull request for any feature requests or bug fixes.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+##  License
 
-## What technologies are used for this project?
+This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/3c1f7ba1-e39c-4ff0-9c1a-6146663a94a2) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
