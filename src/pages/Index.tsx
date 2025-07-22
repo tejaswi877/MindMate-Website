@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   useEffect(() => {
     // Enhanced session checking and auth state management
@@ -43,32 +44,23 @@ const Index = () => {
           setUser(session?.user ?? null);
           setLoading(false);
           
-          if (event === 'SIGNED_IN') {
+          if (event === 'SIGNED_IN' && !hasShownWelcome) {
             const username = session?.user?.user_metadata?.username || 
                            session?.user?.email?.split('@')[0] || 'there';
             toast({
               title: `Welcome back ${username}! 🎉`,
               description: "Your MindMate session is ready for you!",
             });
-            
-            // Refresh data for new session
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
+            setHasShownWelcome(true);
           }
           
           if (event === 'SIGNED_OUT') {
-            // Clear all local data on sign out
             setUser(null);
+            setHasShownWelcome(false);
             toast({
               title: "Signed Out Safely 👋",
               description: "Your data is secure. Sign in anytime to continue your wellness journey!",
             });
-            
-            // Clear any cached data
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
           }
 
           if (event === 'TOKEN_REFRESHED') {
@@ -87,7 +79,7 @@ const Index = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [hasShownWelcome]);
 
   if (loading) {
     return (
