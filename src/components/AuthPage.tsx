@@ -45,6 +45,7 @@ const AuthPage = () => {
       });
 
       if (error) {
+        console.error("Signup error:", error);
         if (error.message.includes("User already registered")) {
           setError("An account with this email already exists. Please sign in instead.");
           setIsSignUp(false);
@@ -64,10 +65,6 @@ const AuthPage = () => {
           title: `Welcome ${username}! 🎉`,
           description: "Your MindMate account is ready!",
         });
-        setEmail("");
-        setPassword("");
-        setUsername("");
-        setConfirmPassword("");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -89,12 +86,17 @@ const AuthPage = () => {
     setError("");
 
     try {
+      console.log("Attempting to sign in with:", email.trim());
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
+      console.log("Sign in response:", { data, error });
+
       if (error) {
+        console.error("Sign in error:", error);
         if (error.message.includes("Invalid login credentials")) {
           setError("Invalid email or password. Please check your credentials and try again.");
         } else if (error.message.includes("Email not confirmed")) {
@@ -105,14 +107,18 @@ const AuthPage = () => {
         return;
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
+        console.log("Sign in successful:", data.user.email);
         const username = data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'there';
         toast({
           title: `Welcome back ${username}! 🎉`,
           description: "Successfully signed in to MindMate",
         });
+        
+        // Clear form
         setEmail("");
         setPassword("");
+        setError("");
       }
     } catch (error: any) {
       console.error("Signin error:", error);
