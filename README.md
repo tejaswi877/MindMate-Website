@@ -56,12 +56,8 @@ MindMate is a full-stack AI-powered mental health companion web application desi
 Contributions are welcome!  
 Please open an issue or submit a pull request for any feature requests or bug fixes.
 
----
 
-##  License
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
 
----
 
 
