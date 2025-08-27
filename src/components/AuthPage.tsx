@@ -177,7 +177,7 @@ const AuthPage = () => {
               >
                 <span className="text-2xl text-white font-bold">M</span>
               </div>
-              <h1 className="text-3xl font-normal mb-0" style={{ marginBottom: '1px' }}>
+              <h1 className="text-3xl font-bold mb-0" style={{ marginBottom: '1px' }}>
                 MindMate
               </h1>
               <p className="text-gray-600 text-sm">Your AI Mental Health Companion</p>
