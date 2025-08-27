@@ -15,6 +15,7 @@ const AuthPage = () => {
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +129,38 @@ const AuthPage = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      setError("Email is required for password reset");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/`,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        toast({
+          title: "Reset Link Sent",
+          description: "Check your email for password reset instructions",
+        });
+        setShowForgotPassword(false);
+      }
+    } catch (error: any) {
+      setError("Failed to send reset email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{
       background: 'linear-gradient(120deg, #f2e8f7, #e8d4f0)',
@@ -166,16 +199,18 @@ const AuthPage = () => {
             </div>
             
             <h2 className="text-lg mb-1">
-              {isSignUp ? "Join MindMate" : "Welcome Back"}
+              {showForgotPassword ? "Reset Password" : isSignUp ? "Join MindMate" : "Welcome Back"}
             </h2>
             <p className="text-gray-600 text-sm mb-5">
-              {isSignUp 
+              {showForgotPassword 
+                ? "Enter your email to receive reset instructions"
+                : isSignUp 
                 ? "Create an account to start your mental wellness journey"
                 : "Log in to continue your mental wellness journey"
               }
             </p>
 
-            <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="mt-5">
+            <form onSubmit={showForgotPassword ? handlePasswordReset : isSignUp ? handleSignUp : handleSignIn} className="mt-5">
               {isSignUp && (
                 <div className="mb-4">
                   <label className="block text-left text-xs font-bold mb-1" htmlFor="username">
@@ -241,7 +276,7 @@ const AuthPage = () => {
                 </div>
               </div>
 
-              {isSignUp && (
+              {isSignUp && !showForgotPassword && (
                 <div className="mb-4">
                   <label className="block text-left text-xs font-bold mb-1" htmlFor="confirm-password">
                     Confirm Password
@@ -258,6 +293,18 @@ const AuthPage = () => {
                       boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.1)'
                     }}
                   />
+                </div>
+              )}
+
+              {!showForgotPassword && !isSignUp && (
+                <div className="text-right mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
               )}
 
@@ -290,7 +337,7 @@ const AuthPage = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : (
-                  `${isSignUp ? "Sign up" : "Log in"}`
+                  `${showForgotPassword ? "Send Reset Link" : isSignUp ? "Sign up" : "Log in"}`
                 )}
               </Button>
             </form>
@@ -304,7 +351,11 @@ const AuthPage = () => {
                   color: '#3f2d56'
                 }}
                 onClick={() => {
-                  setIsSignUp(!isSignUp);
+                  if (showForgotPassword) {
+                    setShowForgotPassword(false);
+                  } else {
+                    setIsSignUp(!isSignUp);
+                  }
                   setError("");
                   setEmail("");
                   setPassword("");
@@ -318,7 +369,12 @@ const AuthPage = () => {
                   (e.target as HTMLElement).style.backgroundColor = '#e0d4f5';
                 }}
               >
-                {isSignUp ? "Already have an account? Log in" : "Need an account? Sign up"}
+                {showForgotPassword 
+                  ? "Back to sign in" 
+                  : isSignUp 
+                  ? "Already have an account? Log in" 
+                  : "Need an account? Sign up"
+                }
               </button>
             </div>
           </div>

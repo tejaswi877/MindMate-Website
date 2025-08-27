@@ -297,7 +297,7 @@ const ChatBot = ({ user }: ChatBotProps) => {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-6 p-6">
+        <div className="flex-1 overflow-y-auto space-y-6 p-6 max-h-[500px]">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}

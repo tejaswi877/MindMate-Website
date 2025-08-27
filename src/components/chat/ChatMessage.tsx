@@ -22,7 +22,7 @@ const ChatMessage = ({ message, getUserDisplayName }: ChatMessageProps) => {
       )}
       
       <div
-        className={`max-w-[75%] p-4 rounded-2xl shadow-lg ${
+        className={`max-w-[75%] p-4 rounded-2xl shadow-lg break-words ${
           message.is_bot
             ? "bg-white/80 backdrop-blur-sm border border-indigo-100 text-gray-800"
             : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
