@@ -56,7 +56,8 @@ const AuthPage = () => {
         return;
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
+        // User is immediately signed in (email confirmation disabled)
         const username = data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'there';
         toast({
           title: `Welcome ${username}! 🎉`,
@@ -69,6 +70,13 @@ const AuthPage = () => {
         setUsername("");
         setConfirmPassword("");
         setError("");
+      } else if (data.user && !data.session) {
+        // Email confirmation required
+        toast({
+          title: "Check your email! 📧",
+          description: "Please click the confirmation link in your email to complete signup.",
+        });
+        setError("Please check your email and click the confirmation link to activate your account.");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
