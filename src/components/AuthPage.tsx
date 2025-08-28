@@ -56,16 +56,19 @@ const AuthPage = () => {
         return;
       }
 
-      if (data.user && !data.session) {
-        toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link to complete your registration.",
-        });
-      } else if (data.session) {
+      if (data.user) {
+        const username = data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'there';
         toast({
           title: `Welcome ${username}! 🎉`,
           description: "Your MindMate account is ready!",
         });
+        
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setUsername("");
+        setConfirmPassword("");
+        setError("");
       }
     } catch (error: any) {
       console.error("Signup error:", error);
