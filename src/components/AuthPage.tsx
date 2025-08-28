@@ -296,17 +296,6 @@ const AuthPage = () => {
                 </div>
               )}
 
-              {!showForgotPassword && !isSignUp && (
-                <div className="text-right mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              )}
 
               {error && (
                 <div className="text-red-500 text-xs mb-4 text-left">
@@ -316,7 +305,7 @@ const AuthPage = () => {
 
               <Button
                 disabled={loading}
-                className="w-full h-10 text-white border-none rounded-lg cursor-pointer mb-1"
+                className="w-full h-10 text-white border-none rounded-lg cursor-pointer mb-0"
                 style={{ 
                   backgroundColor: '#806ab5',
                 }}
