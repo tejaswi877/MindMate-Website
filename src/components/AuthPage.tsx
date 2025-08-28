@@ -316,7 +316,7 @@ const AuthPage = () => {
 
               <Button
                 disabled={loading}
-                className="w-full h-10 text-white border-none rounded-lg cursor-pointer mb-2"
+                className="w-full h-10 text-white border-none rounded-lg cursor-pointer mb-1"
                 style={{ 
                   backgroundColor: '#806ab5',
                 }}
